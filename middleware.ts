@@ -57,10 +57,30 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // 2. If user IS logged in and tries to access the login page
-  if (user && requestedPath === '/login') {
-    // Redirect them to the user dashboard
-    return NextResponse.redirect(new URL('/users', request.url))
+  // 2. If user IS logged in...
+  if (user) {
+    // ...and tries to access the login page, redirect them away
+    if (requestedPath === '/login') {
+      return NextResponse.redirect(new URL('/users', request.url))
+    }
+
+    // ...and tries to access an admin page...
+    if (requestedPath.startsWith('/users') || requestedPath.startsWith('/api/create-user')) {
+
+      // ...fetch their profile to check their role.
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      // If not an admin (or profile not found), deny access
+      if (error || !profile || profile.role !== 'admin') {
+        // You can redirect to a '/' homepage or an 'unauthorized' page.
+        // For now, we'll send them to the root.
+        return NextResponse.redirect(new URL('/', request.url))
+      }
+    }
   }
   
   // 3. If all checks pass, continue

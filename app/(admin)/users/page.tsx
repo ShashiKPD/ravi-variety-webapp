@@ -13,9 +13,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import LogoutButton from "../components/LogoutButton";
 
 export default async function UsersPage() {
-  const supabase = createClient(); // <-- 2. Initialize the server client
+  const supabase = await createClient(); // <-- 2. Initialize the server client
   
   // 3. Fetch all users from the profiles table
   const { data: profiles, error } = await supabase
@@ -31,7 +32,10 @@ export default async function UsersPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle>User Management</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>User Management</CardTitle>
+            <LogoutButton /> 
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
