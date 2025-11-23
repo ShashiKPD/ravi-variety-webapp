@@ -28,8 +28,18 @@ export default function LoginPage() {
     if (error) {
       setError(error.message)
     } else {
-      // On success, send the admin to their user dashboard
-      router.push('/users')
+      // On success, send the admin to their user dashboard and to the main page for others
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        if (profile?.role === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/')
+        }
+      } else {
+        router.push('/')
+      }
     }
   }
 

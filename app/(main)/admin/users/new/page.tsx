@@ -31,7 +31,7 @@ export default function CreateUserPage() {
     setError("");
 
     // Send the form data to our API route
-    const response = await fetch("/api/create-user", {
+    const response = await fetch("/admin/api/create-user", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

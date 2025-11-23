@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server'
 // We import the client directly from @supabase/ssr here
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // Create a response object
   let response = NextResponse.next({
     request: {
@@ -52,8 +52,7 @@ export async function middleware(request: NextRequest) {
   // **PROTECTION LOGIC**
 
   // 1. If user is NOT logged in and tries to access admin area
-  if (!user && (requestedPath.startsWith('/users') || requestedPath.startsWith('/api/create-user'))) {
-    // Redirect them to the login page
+  if (!user && requestedPath.startsWith('/admin')) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
@@ -61,12 +60,11 @@ export async function middleware(request: NextRequest) {
   if (user) {
     // ...and tries to access the login page, redirect them away
     if (requestedPath === '/login') {
-      return NextResponse.redirect(new URL('/users', request.url))
+      return NextResponse.redirect(new URL('/', request.url))
     }
 
     // ...and tries to access an admin page...
-    if (requestedPath.startsWith('/users') || requestedPath.startsWith('/api/create-user')) {
-
+    if (requestedPath.startsWith('/admin')) {
       // ...fetch their profile to check their role.
       const { data: profile, error } = await supabase
         .from('profiles')
