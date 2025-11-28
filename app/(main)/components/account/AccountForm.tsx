@@ -197,7 +197,7 @@ export default function AccountForm({ user }: { user: ProfileData }) {
                 name="address_text" 
                 defaultValue={user.address_text || ""} 
                 placeholder="Shop No, Street, Landmark, City..." 
-                className="min-h-[80px]"
+                className="min-h-20"
               />
             </div>
 

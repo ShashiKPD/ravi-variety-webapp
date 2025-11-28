@@ -117,7 +117,8 @@ export default function ProductInfo({
             {sizeVariants.map((variant: any) => {
                const isActive = variant.id === currentVariant.id;
                return (
-                 <Link key={variant.id} href={`/p/${variant.slug}/${variant.id}`} scroll={false}>
+                 // FIXED: Removed scroll={false} so page starts from top on navigation
+                 <Link key={variant.id} href={`/p/${variant.slug}/${variant.id}`}>
                     <div className={cn(
                         "px-4 py-2 text-sm font-medium rounded-lg border transition-all",
                         isActive 
@@ -133,11 +134,10 @@ export default function ProductInfo({
         </div>
       )}
 
-      {/* 2. OTHER VARIETIES (COUSINS) - Updated Layout */}
+      {/* 2. OTHER VARIETIES (COUSINS) */}
       {otherTypes && otherTypes.length > 0 && (
         <div className="mb-8">
           <h3 className="text-sm font-bold text-gray-900 mb-3">Similar Products</h3>
-          {/* Horizontal Scroll Container */}
           <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 no-scrollbar scroll-smooth">
             {otherTypes.map((type: any) => (
               <Link 
@@ -146,7 +146,6 @@ export default function ProductInfo({
                 className="shrink-0 group"
               >
                  <div className="w-24 flex flex-col gap-2">
-                   {/* Thumbnail Card */}
                    <div className="w-24 h-24 rounded-lg border bg-white p-1 relative overflow-hidden group-hover:border-blue-500 group-hover:shadow-md transition-all">
                      <img 
                         src={type.thumbnail_url || "/placeholder.png"} 
@@ -154,9 +153,7 @@ export default function ProductInfo({
                         className="w-full h-full object-contain mix-blend-multiply"
                      />
                    </div>
-                   {/* Group Name */}
                    <span className="text-xs text-center font-medium text-gray-600 leading-tight line-clamp-2 group-hover:text-blue-600">
-                      {/* Strip Brand Name if redundant, optional */}
                       {type.name}
                    </span>
                  </div>
@@ -166,7 +163,7 @@ export default function ProductInfo({
         </div>
       )}
 
-      {/* ACTION BAR (Mobile Fixed, Desktop Static) */}
+      {/* ACTION BAR */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 lg:static lg:border-none lg:shadow-none lg:p-0 lg:mb-8">
         <div className="flex gap-4 max-w-7xl mx-auto lg:mx-0">
            <div className="w-24 shrink-0">
@@ -186,12 +183,17 @@ export default function ProductInfo({
               />
            </div>
            <div className="flex-none">
-              <WishlistButton productId={currentVariant.id} isInitiallyWishlisted={isWishlisted} />
+              {/* FIXED: Increased size to h-11 w-11 and added rounded-md to match AddToCart button */}
+              <WishlistButton 
+                productId={currentVariant.id} 
+                isInitiallyWishlisted={isWishlisted} 
+                className="h-11 w-11 rounded-md border-gray-300 [&_svg]:h-6 [&_svg]:w-6"
+              />
            </div>
         </div>
       </div>
 
-      {/* 3. BUY IN BULK TABLE (After Cart Buttons) */}
+      {/* 3. BUY IN BULK TABLE */}
       {userRole !== "anon" && processedTiers.length > 1 && (
         <div className="mb-8 mt-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
           <h3 className="font-bold text-gray-900 mb-4 text-base">Buy In Bulk</h3>

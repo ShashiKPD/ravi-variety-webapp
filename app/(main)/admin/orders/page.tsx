@@ -53,7 +53,7 @@ export default async function AdminOrdersPage() {
         <Table>
           <TableHeader className="bg-gray-50">
             <TableRow>
-              <TableHead className="w-[80px]">ID</TableHead>
+              <TableHead className="w-20">ID</TableHead>
               <TableHead>Customer</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Amount</TableHead>

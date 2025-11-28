@@ -14,19 +14,22 @@ export default function ProductImageGallery({ images, title }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Main Image */}
       <div className="relative aspect-square w-full bg-white rounded-lg border overflow-hidden">
         <Image
           src={mainImage || "/placeholder.png"}
           alt={title}
           fill
-          className="object-contain p-4"
+          className="object-contain p-4 mix-blend-multiply"
           priority
           sizes="(max-width: 768px) 100vw, 50vw"
         />
       </div>
 
+      {/* Thumbnails */}
       {images.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-2">
+        // FIXED: Added 'p-2' to prevent the hover ring from getting cut off
+        <div className="flex gap-2 overflow-x-auto p-2">
           {images.map((img, idx) => (
             <button
               key={idx}

@@ -42,7 +42,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
                 </Badge>
               )}
             </div>
-            <p className="text-sm text-gray-500 font-mono text-xs mt-1">{profile.id}</p>
+            <p className="text-gray-500 font-mono text-xs mt-1">{profile.id}</p>
           </div>
         </div>
         <Button asChild>

@@ -3,18 +3,17 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import WishlistButton from "./WishlistButton";
 import AddToCartButton from "./AddToCartButton";
-import { ProductSummary } from "@/lib/types"; // Updated import
+import { ProductSummary } from "@/lib/types";
 
 export default function ProductCard({
   product,
   showInteractiveButtons = false,
   isInitiallyWishlisted = false,
 }: {
-  product: ProductSummary; // Updated Type
+  product: ProductSummary;
   showInteractiveButtons?: boolean;
   isInitiallyWishlisted?: boolean;
 }) {
-  // --- Price Logic ---
   let priceDisplay = <p className="text-sm text-gray-500">Log in to see price</p>;
 
   if (product.price_data) {
@@ -39,20 +38,25 @@ export default function ProductCard({
   }
 
   return (
-    <Card className="w-full relative overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow gap-0 py-0">
+    <Card className="w-full relative overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow gap-0 py-0 group">
+        
+        {/* FIX: Absolute positioning to pin to Top Right */}
         {showInteractiveButtons && (
-          <WishlistButton
-            productId={product.variant_id}
-            isInitiallyWishlisted={isInitiallyWishlisted}
-          />
+          <div className="absolute top-2 right-2 z-10">
+            <WishlistButton
+              productId={product.variant_id}
+              isInitiallyWishlisted={isInitiallyWishlisted}
+            />
+          </div>
         )}
+
       <div className="relative w-full aspect-square bg-white">
         <Link href={`/p/${product.product_slug}/${product.variant_id}`}>
           <Image
             src={product.thumbnail_url || "/placeholder.png"}
             alt={product.product_name}
             fill
-            style={{ objectFit: "contain", padding: "12px" }}
+            className="object-contain p-4 group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           />
         </Link>
@@ -60,7 +64,7 @@ export default function ProductCard({
 
       <CardHeader className="p-3 pb-0">
          <Link href={`/p/${product.product_slug}/${product.variant_id}`}>
-            <CardTitle className="truncate text-sm sm:text-base hover:underline text-wrap">
+            <CardTitle className="truncate text-sm sm:text-base hover:underline text-wrap line-clamp-2 h-10 leading-tight">
             {product.product_name}
             </CardTitle>
         </Link>

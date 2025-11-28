@@ -35,7 +35,7 @@ export default function ProductCard({
       {/* HEADER */}
       <div className="flex items-center justify-between bg-gray-50/50 cursor-pointer hover:bg-gray-100/50 transition-colors" onClick={() => onToggleExpand(product.id)}>
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className={`flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold w-6 h-6 ${index === 0 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'}`}>
+          <div className={`shrink-0 flex items-center justify-center rounded-full text-xs font-bold w-6 h-6 ${index === 0 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'}`}>
             {index === 0 ? <Box className="h-3 w-3" /> : `#${index}`}
           </div>
           <div className="min-w-0">
@@ -49,7 +49,7 @@ export default function ProductCard({
           </div>
         </div>
         
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
           <Button type="button" size="sm" variant="ghost" onClick={() => onDuplicate(product)} className="h-7 px-2 text-xs text-gray-600 hover:text-blue-600">
             <Copy className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Copy</span>
           </Button>
