@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import ProductCard from "./components/ProductCard";
+import CategoryScroller from "./components/CategoryScroller";
 import { ProductSummary, ProductPrice } from "@/lib/types";
 import {
   Carousel,
@@ -68,13 +69,13 @@ export default async function HomePage() {
   const popularProducts = await fetchPricesForProducts((popularRes.data as ProductSummary[]) || [], supabase, userRole);
   const categories = categoriesRes.data || [];
 
-  // Icon mapping for categories (You can expand this map as needed)
-  const categoryIcons = {
-    Aachar: <Leaf className="h-6 w-6 text-green-600" />,
-    Spices: <Leaf className="h-6 w-6 text-orange-600" />, 
-    "Ice Cream": <IceCream className="h-6 w-6 text-pink-500" />,
-    Default: <Home className="h-6 w-6 text-blue-500" />,
-  };
+  // // Icon mapping for categories (You can expand this map as needed)
+  // const categoryIcons = {
+  //   Aachar: <Leaf className="h-6 w-6 text-green-600" />,
+  //   Spices: <Leaf className="h-6 w-6 text-orange-600" />, 
+  //   "Ice Cream": <IceCream className="h-6 w-6 text-pink-500" />,
+  //   Default: <Home className="h-6 w-6 text-blue-500" />,
+  // };
 
   // --- 4. Mock Hero Banners ---
   const heroBanners = [
@@ -84,30 +85,8 @@ export default async function HomePage() {
 
   return (
     <div className="bg-gray-50 pb-8">
-      
-      {/* --- Category Scroller (Restored) --- */}
-      {categories.length > 0 && (
-        <div className="bg-white p-3 shadow-sm mb-2 sticky top-[73px] z-40 overflow-hidden border-b"> 
-          {/* Added 'border-b' and adjusted sticky top to sit below the header (approx 73px) */}
-          <div className="flex overflow-x-auto gap-4 pb-2 scrollbar-hide px-2">
-            {categories.map((category) => (
-              <Link
-                href={`/category/${category.id}`}
-                key={category.id}
-                className="flex flex-col items-center gap-1 w-20 shrink-0 group cursor-pointer hover:opacity-80 transition-opacity"
-              >
-                <div className="h-12 w-12 rounded-full bg-gray-100 group-hover:bg-blue-50 flex items-center justify-center transition-colors border border-transparent group-hover:border-blue-200">
-                  {categoryIcons[category.name as keyof typeof categoryIcons] ||
-                    categoryIcons.Default}
-                </div>
-                <span className="text-xs text-center truncate w-full group-hover:text-blue-600 font-medium text-gray-700 leading-tight">
-                  {category.name}
-                </span>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
+
+      <CategoryScroller categories={categories} />
 
       {/* --- Hero Carousel --- */}
       <div className="p-4 pt-2">
