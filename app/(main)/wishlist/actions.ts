@@ -3,7 +3,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
-// This Server Action will be called by our button
 export async function toggleWishlistItem(productId: number) {
   const supabase = await createClient();
 
@@ -13,7 +12,7 @@ export async function toggleWishlistItem(productId: number) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "You must be logged in to add to wishlist." };
+    return { error: "You must be logged in to manage your wishlist." };
   }
 
   // 2. Check if the item is ALREADY in the wishlist
@@ -25,25 +24,30 @@ export async function toggleWishlistItem(productId: number) {
     .single();
 
   if (fetchError && fetchError.code !== "PGRST116") {
-    // PGRST116 is 'No rows found', which is not an error here
+    // PGRST116 is 'No rows found', which is expected for new items
     console.error("Error checking wishlist:", fetchError);
     return { error: fetchError.message };
   }
 
   try {
     if (existingItem) {
-      // 3. If it exists, REMOVE it
+      // 3. REMOVE
       const { error } = await supabase
         .from("wishlist_items")
         .delete()
         .eq("id", existingItem.id);
 
       if (error) throw error;
-      revalidatePath("/wishlist"); // Update the wishlist page cache
-      return { success: "Removed from wishlist" };
+
+      // Revalidate to update UI
+      revalidatePath("/wishlist");
+      revalidatePath("/"); // Update heart icons on homepage
+      revalidatePath("/p/[slug]/[id]", 'page'); // Update product pages
+      
+      return { success: "Removed from wishlist", isWishlisted: false };
 
     } else {
-      // 4. If it does not exist, ADD it
+      // 4. ADD
       const { error } = await supabase
         .from("wishlist_items")
         .insert({
@@ -52,8 +56,12 @@ export async function toggleWishlistItem(productId: number) {
         });
 
       if (error) throw error;
-      revalidatePath("/wishlist"); // Update the wishlist page cache
-      return { success: "Added to wishlist" };
+
+      revalidatePath("/wishlist");
+      revalidatePath("/");
+      revalidatePath("/p/[slug]/[id]", 'page');
+
+      return { success: "Added to wishlist", isWishlisted: true };
     }
   } catch (error: any) {
     return { error: `Database error: ${error.message}` };
