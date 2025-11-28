@@ -48,6 +48,8 @@ export default function Header({
   const searchParams = useSearchParams();
   
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLeftOpen, setIsLeftOpen] = useState(false);
+  const [isRightOpen, setIsRightOpen] = useState(false);
 
   useEffect(() => {
     const q = searchParams.get("q");
@@ -62,6 +64,7 @@ export default function Header({
     params.set("q", searchQuery.trim());
     params.set("page", "1");
     
+    setIsLeftOpen(false); // Close mobile menu if searching
     router.push(`/search?${params.toString()}`);
   };
 
@@ -71,13 +74,11 @@ export default function Header({
   return (
     <header className="flex flex-col sticky top-0 z-50">
       
-      {/* --- Top Bar --- */}
       <div className="bg-gray-800 text-white">
         <nav className="flex justify-between items-center max-w-[1400px] mx-auto p-3">
           
-          {/* LEFT: Navigation Menu (Browsing) */}
           <div className="flex items-center gap-2">
-            <Sheet>
+            <Sheet open={isLeftOpen} onOpenChange={setIsLeftOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
@@ -94,27 +95,21 @@ export default function Header({
                   </SheetTitle>
                 </SheetHeader>
                 
-                {/* WEBSITE NAVIGATION */}
                 <nav className="flex-1 overflow-y-auto mt-6">
                   <div className="flex flex-col space-y-2">
-                    <Button variant="ghost" asChild className="justify-start text-base h-12">
+                    <Button variant="ghost" asChild className="justify-start text-base h-12" onClick={() => setIsLeftOpen(false)}>
                       <Link href="/">
                         <Home className="mr-3 h-5 w-5 text-gray-500" /> Home
                       </Link>
                     </Button>
-                    <Button variant="ghost" asChild className="justify-start text-base h-12">
+                    <Button variant="ghost" asChild className="justify-start text-base h-12" onClick={() => setIsLeftOpen(false)}>
                       <Link href="/search">
                         <Store className="mr-3 h-5 w-5 text-gray-500" /> All Products
                       </Link>
                     </Button>
-                    <Button variant="ghost" asChild className="justify-start text-base h-12">
+                    <Button variant="ghost" asChild className="justify-start text-base h-12" onClick={() => setIsLeftOpen(false)}>
                       <Link href="/search?categories=1"> 
                         <LayoutGrid className="mr-3 h-5 w-5 text-gray-500" /> Categories
-                      </Link>
-                    </Button>
-                    <Button variant="ghost" asChild className="justify-start text-base h-12">
-                      <Link href="/wishlist">
-                        <Heart className="mr-3 h-5 w-5 text-gray-500" /> My Wishlist
                       </Link>
                     </Button>
                   </div>
@@ -127,24 +122,20 @@ export default function Header({
             </Link>
           </div>
           
-          {/* RIGHT: User Actions (Account & Cart) */}
           <div className="flex gap-1 sm:gap-2 items-center">
             
-            {/* Desktop Admin Link */}
             {userRole === 'admin' && !isAdminDashboard && (
               <Button variant="ghost" asChild className="text-white hover:bg-gray-700 hover:text-white hidden sm:flex font-medium">
                 <Link href="/admin">Admin Panel</Link>
               </Button>
             )}
 
-            {/* Desktop Wishlist Icon */}
             <Link href="/wishlist" passHref>
               <Button variant="ghost" size="icon" aria-label="Wishlist" className="text-white hover:bg-gray-700 hidden sm:flex">
                 <Heart className="h-5 w-5" />
               </Button>
             </Link>
 
-            {/* Cart Icon */}
             <Link href="/cart" passHref>
               <Button variant="ghost" size="icon" aria-label="Cart" className="relative text-white hover:bg-gray-700">
                 <ShoppingCart className="h-5 w-5" />
@@ -156,8 +147,7 @@ export default function Header({
               </Button>
             </Link>
             
-            {/* USER PROFILE SHEET */}
-            <Sheet>
+            <Sheet open={isRightOpen} onOpenChange={setIsRightOpen}>
               <SheetTrigger asChild>
                 {isLoggedIn ? (
                   <Button variant="ghost" className="text-white hover:bg-gray-700 p-1 pr-2 gap-2 h-auto ml-1">
@@ -171,7 +161,6 @@ export default function Header({
                       )}
                     </div>
                     
-                    {/* CHANGED: Name is 'hidden' on mobile, 'inline' on sm (desktop/tablet) */}
                     <span className="hidden sm:inline text-sm font-medium">
                       {userName}
                     </span>
@@ -205,7 +194,7 @@ export default function Header({
 
                   <nav className="flex flex-col space-y-1 mt-4 flex-1">
                     {userRole === "admin" && (
-                      <Button variant="ghost" asChild className="justify-between text-base h-12 hover:bg-blue-50 hover:text-blue-700">
+                      <Button variant="ghost" asChild className="justify-between text-base h-12 hover:bg-blue-50 hover:text-blue-700" onClick={() => setIsRightOpen(false)}>
                         <Link href="/admin">
                           <span className="flex items-center gap-3 font-semibold text-blue-600">
                              Admin Panel
@@ -215,7 +204,7 @@ export default function Header({
                       </Button>
                     )}
 
-                    <Button variant="ghost" asChild className="justify-between text-base h-12">
+                    <Button variant="ghost" asChild className="justify-between text-base h-12" onClick={() => setIsRightOpen(false)}>
                       <Link href="/orders">
                         <span className="flex items-center gap-3">
                           <ShoppingBag className="h-4 w-4 text-gray-500" /> My Orders
@@ -224,7 +213,16 @@ export default function Header({
                       </Link>
                     </Button>
 
-                    <Button variant="ghost" asChild className="justify-between text-base h-12">
+                    <Button variant="ghost" asChild className="justify-between text-base h-12" onClick={() => setIsRightOpen(false)}>
+                      <Link href="/wishlist">
+                        <span className="flex items-center gap-3">
+                          <Heart className="h-4 w-4 text-gray-500" /> My Wishlist
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      </Link>
+                    </Button>
+
+                    <Button variant="ghost" asChild className="justify-between text-base h-12" onClick={() => setIsRightOpen(false)}>
                       <Link href="/account">
                         <span className="flex items-center gap-3">
                           <Settings className="h-4 w-4 text-gray-500" /> Account Settings
@@ -245,7 +243,6 @@ export default function Header({
         </nav>
       </div>
 
-      {/* --- Search Bar --- */}
       {!isAdminPage && (
         <div className="bg-white border-b shadow-sm py-2 px-3 sm:py-3 sm:px-4">
           <div className="relative max-w-[1400px] mx-auto">
@@ -255,10 +252,8 @@ export default function Header({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                // CHANGED: Compact height (h-9) on mobile, normal (h-11) on desktop
                 className="w-full pl-9 sm:pl-10 h-9 sm:h-11 text-sm rounded-lg border-gray-200 bg-gray-50 focus:bg-white transition-colors"
               />
-              {/* CHANGED: Compact icon size */}
               <button type="submit" className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 p-1">
                 <Search className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               </button>
