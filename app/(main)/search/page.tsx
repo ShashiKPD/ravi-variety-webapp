@@ -1,15 +1,12 @@
 import { createClient } from "@/utils/supabase/server";
-import { notFound } from "next/navigation";
-import SearchFilters from "../../components/search/SearchFilters";
+import SearchFilters from "../components/search/SearchFilters";
 import { ProductSummary, ProductPrice } from "@/lib/types";
-import ProductGrid from "../../components/ProductGrid";
+import ProductGrid from "../components/ProductGrid"; // Import new component
 
-type PageProps = {
-  params: Promise<{ id: string }>;
+type SearchPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-// --- Helper (Same as Search Page) ---
 async function fetchPricesForResults(products: any[], supabase: any, userRole: string) {
   if (!userRole || userRole === "anon" || products.length === 0) {
     return products.map(p => ({ ...p, price_data: null })) as ProductSummary[];
@@ -37,11 +34,9 @@ async function fetchPricesForResults(products: any[], supabase: any, userRole: s
   return Promise.all(promises);
 }
 
-export default async function CategoryPage({ params, searchParams }: PageProps) {
+export default async function SearchPage({ searchParams }: SearchPageProps) {
   const supabase = await createClient();
-  const { id } = await params;
-  const urlParams = await searchParams;
-  const categoryId = Number(id);
+  const params = await searchParams;
 
   // 1. Get User Role
   const { data: { user } } = await supabase.auth.getUser();
@@ -59,32 +54,24 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
     }
   }
 
-  // 2. Fetch Category Details (For Title)
-  const { data: category } = await supabase
-    .from("categories")
-    .select("name")
-    .eq("id", categoryId)
-    .single();
-
-  if (!category) return notFound();
-
-  // 3. Parse Filters
-  const page = Number(urlParams.page) || 1;
-  const sort = typeof urlParams.sort === "string" ? urlParams.sort : "newest";
+  // 2. Parse Params
+  const query = typeof params.q === "string" ? params.q : "";
+  const page = Number(params.page) || 1;
+  const sort = typeof params.sort === "string" ? params.sort : "newest";
   const limit = 20;
-  
-  const brandIds = typeof urlParams.brands === "string" ? urlParams.brands.split(",").map(Number) : null;
-  const sizeFilters = typeof urlParams.sizes === "string" ? urlParams.sizes.split(",") : null;
-  const minPrice = urlParams.min_price ? Number(urlParams.min_price) : null;
-  const maxPrice = urlParams.max_price ? Number(urlParams.max_price) : null;
 
-  // 4. Fetch Products & Filter Data
-  const [searchResults, brandsRes, sizesRes] = await Promise.all([
-    // A. Reusing the Search RPC
+  const brandIds = typeof params.brands === "string" ? params.brands.split(",").map(Number) : null;
+  const categoryIds = typeof params.categories === "string" ? params.categories.split(",").map(Number) : null;
+  const sizeFilters = typeof params.sizes === "string" ? params.sizes.split(",") : null;
+  const minPrice = params.min_price ? Number(params.min_price) : null;
+  const maxPrice = params.max_price ? Number(params.max_price) : null;
+
+  // 3. Fetch Data
+  const [searchResults, categoriesRes, brandsRes, sizesRes] = await Promise.all([
     supabase.rpc("search_products", {
-      p_search_text: null, // No text search in category view
-      p_category_ids: [categoryId], // <--- FIXED CATEGORY FILTER
+      p_search_text: query || null,
       p_brand_ids: brandIds,
+      p_category_ids: categoryIds,
       p_sizes: sizeFilters,
       p_min_price: minPrice,
       p_max_price: maxPrice,
@@ -92,8 +79,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
       p_page: page,
       p_limit: limit
     }),
-    
-    // B. Filter Metadata (Only Brands & Sizes needed here)
+    supabase.from("categories").select("id, name").order("name"),
     supabase.from("brands").select("id, name").order("name"),
     supabase.rpc("get_distinct_product_sizes")
   ]);
@@ -103,7 +89,7 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
   const totalCount = productsRaw[0]?.total_count || 0;
   const totalPages = Math.ceil(Number(totalCount) / limit);
 
-  // 5. Hydrate Prices
+  // 4. Hydrate Prices
   const products = await fetchPricesForResults(productsRaw, supabase, userRole);
   const showInteractiveButtons = ["retailer", "wholesaler", "admin"].includes(userRole);
 
@@ -112,17 +98,17 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
       
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">{category.name}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {query ? `Results for "${query}"` : "All Products"}
+        </h1>
         <p className="text-sm text-gray-500 mt-1">
           Showing {products.length} of {Number(totalCount)} items
         </p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-2">
-        
         <SearchFilters 
-          categories={[]} 
-          hideCategories={true} 
+          categories={categoriesRes.data || []} 
           brands={brandsRes.data || []} 
           sizes={availableSizes} 
         />
@@ -136,8 +122,8 @@ export default async function CategoryPage({ params, searchParams }: PageProps) 
             limit={limit}
             showInteractiveButtons={showInteractiveButtons}
             wishlistVariantIds={wishlistVariantIds}
-            currentParams={urlParams}
-            clearFiltersHref={`/category/${categoryId}`}
+            currentParams={params}
+            clearFiltersHref="/search"
           />
         </div>
       </div>

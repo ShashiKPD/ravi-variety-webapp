@@ -4,13 +4,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, MapPin, Mail, Phone, Calendar, User } from "lucide-react";
+import { ArrowLeft, Edit, MapPin, Mail, Phone, Calendar, User, Ban, CheckCircle } from "lucide-react";
 
 export default async function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
 
-  // Fetch full profile
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("*")
@@ -19,22 +18,34 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
 
   if (error || !profile) notFound();
 
+  const isActive = profile.is_active !== false;
+
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/users"><ArrowLeft className="w-5 h-5" /></Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{profile.full_name}</h1>
-            <p className="text-sm text-gray-500 font-mono text-xs">{profile.id}</p>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">{profile.full_name}</h1>
+              {isActive ? (
+                <Badge variant="outline" className="text-green-700 bg-green-50 border-green-200 gap-1">
+                  <CheckCircle className="w-3 h-3" /> Active
+                </Badge>
+              ) : (
+                <Badge variant="destructive" className="gap-1">
+                  <Ban className="w-3 h-3" /> Disabled
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 font-mono text-xs mt-1">{profile.id}</p>
           </div>
         </div>
         <Button asChild>
-          {/* We will build this edit page next if needed */}
           <Link href={`/admin/users/${profile.id}/edit`}>
             <Edit className="w-4 h-4 mr-2" /> Edit User
           </Link>
@@ -53,7 +64,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           <CardContent className="space-y-4">
             <div>
               <p className="text-xs text-gray-500">Account Role</p>
-              <Badge className="mt-1 capitalize px-3 py-1 text-sm">
+              <Badge className="mt-1 capitalize px-3 py-1 text-sm bg-slate-100 text-slate-800 border-slate-200 hover:bg-slate-200">
                 {profile.role}
               </Badge>
             </div>
@@ -122,7 +133,7 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
                 </div>
                 <div className="col-span-2">
                   <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${profile.latitude},${profile.longitude}`} 
+                    href={`http://maps.google.com/?q=${profile.latitude},${profile.longitude}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-xs text-blue-600 hover:underline flex items-center gap-1"

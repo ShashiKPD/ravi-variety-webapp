@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Image from "next/image"; // Import Image
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +13,7 @@ import {
   Search,
   User,
   ChevronRight,
+  Settings, // Added Icon
 } from "lucide-react";
 import LogoutButton from "./LogoutButton";
 import {
@@ -25,6 +28,7 @@ type HeaderProps = {
   isLoggedIn: boolean;
   userRole: string | null;
   userName: string | null;
+  userAvatar: string | null; // New Prop
   cartCount: number;
 };
 
@@ -32,28 +36,43 @@ export default function Header({
   isLoggedIn,
   userRole,
   userName,
+  userAvatar,
   cartCount,
 }: HeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   
-  // Logic: 
-  // 1. isAdminPage: Any route starting with /admin. Use to hide Search.
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q) setSearchQuery(q);
+  }, [searchParams]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("q", searchQuery.trim());
+    params.set("page", "1");
+    
+    router.push(`/search?${params.toString()}`);
+  };
+
   const isAdminPage = pathname.startsWith("/admin");
-  
-  // 2. isAdminDashboard: EXACTLY "/admin". Use to hide the "Admin Panel" link (since we are already there).
   const isAdminDashboard = pathname === "/admin";
 
   return (
     <header className="flex flex-col sticky top-0 z-50">
       
-      {/* --- Top Bar (Dark Slate) --- */}
+      {/* --- Top Bar --- */}
       <div className="bg-gray-800 text-white">
         <nav className="flex justify-between items-center max-w-6xl mx-auto p-3">
           
-          {/* --- Left Side: Hamburger (Mobile) & Logo --- */}
+          {/* Left: Mobile Menu & Logo */}
           <div className="flex items-center gap-2">
-            
-            {/* Left Sheet (Main Menu) - Mobile Only */}
             <Sheet>
               <SheetTrigger asChild>
                 <Button
@@ -66,27 +85,25 @@ export default function Header({
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] flex flex-col">
                 <SheetHeader>
-                  <SheetTitle className="text-xl">
+                  <SheetTitle className="text-xl text-left">
                     Hello, {userName || "Guest"}
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex-1 overflow-y-auto mt-6">
                   <div className="flex flex-col space-y-2">
                     {userRole === "admin" && (
-                      <Button
-                        variant="ghost"
-                        asChild
-                        className="justify-start text-base font-bold"
-                      >
+                      <Button variant="ghost" asChild className="justify-start text-base font-bold">
                         <Link href="/admin">Admin Panel</Link>
                       </Button>
                     )}
-                    <Button
-                      variant="ghost"
-                      asChild
-                      className="justify-start text-base"
-                    >
+                    <Button variant="ghost" asChild className="justify-start text-base">
+                      <Link href="/account">Account Settings</Link>
+                    </Button>
+                    <Button variant="ghost" asChild className="justify-start text-base">
                       <Link href="/wishlist">Wishlist</Link>
+                    </Button>
+                    <Button variant="ghost" asChild className="justify-start text-base">
+                      <Link href="/orders">My Orders</Link>
                     </Button>
                   </div>
                 </nav>
@@ -98,46 +115,26 @@ export default function Header({
               </SheetContent>
             </Sheet>
             
-            <Link href="/" className="text-xl font-bold">
-              Ravi Variety
-            </Link>
+            <Link href="/" className="text-xl font-bold">Ravi Variety</Link>
           </div>
           
-          {/* --- Right Side: Icons & User Menu --- */}
+          {/* Right: Icons & User */}
           <div className="flex gap-2 items-center">
             
-            {/* Desktop "Admin Panel" Link */}
-            {/* Show IF: User is admin AND we are NOT on the dashboard itself */}
             {userRole === 'admin' && !isAdminDashboard && (
-              <Button
-                variant="ghost"
-                asChild
-                className="text-white hover:bg-gray-700 hover:text-white hidden sm:flex"
-              >
+              <Button variant="ghost" asChild className="text-white hover:bg-gray-700 hover:text-white hidden sm:flex">
                 <Link href="/admin">Admin Panel</Link>
               </Button>
             )}
 
-            {/* Wishlist */}
             <Link href="/wishlist" passHref>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Wishlist"
-                className="text-white hover:bg-gray-700"
-              >
+              <Button variant="ghost" size="icon" aria-label="Wishlist" className="text-white hover:bg-gray-700">
                 <Heart className="h-5 w-5" />
               </Button>
             </Link>
 
-            {/* Cart */}
             <Link href="/cart" passHref>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Cart"
-                className="relative text-white hover:bg-gray-700"
-              >
+              <Button variant="ghost" size="icon" aria-label="Cart" className="relative text-white hover:bg-gray-700">
                 <ShoppingCart className="h-5 w-5" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 block h-4 w-4 rounded-full bg-red-500 text-white text-xs font-medium text-center">
@@ -147,51 +144,64 @@ export default function Header({
               </Button>
             </Link>
             
-            {/* Right Sheet (User Menu) */}
+            {/* User Menu Sheet */}
             <Sheet>
               <SheetTrigger asChild>
                 {isLoggedIn ? (
-                  <Button
-                    variant="ghost"
-                    className="text-white hover:bg-gray-700 p-2"
-                  >
-                    <User className="h-5 w-5" />
-                    <span className="hidden sm:inline ml-2 text-sm font-medium">
+                  <Button variant="ghost" className="text-white hover:bg-gray-700 p-1 pr-2 gap-2 h-auto">
+                    {/* Avatar Logic */}
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-600 bg-gray-700">
+                      {userAvatar ? (
+                        <Image src={userAvatar} alt="User" fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="hidden sm:inline text-sm font-medium truncate max-w-[100px]">
                       {userName}
                     </span>
                   </Button>
                 ) : (
-                  <Link
-                    href="/login"
-                    className="py-2 px-3 rounded-md bg-gray-100 text-gray-900 text-sm font-medium"
-                  >
+                  <Link href="/login" className="py-2 px-3 rounded-md bg-gray-100 text-gray-900 text-sm font-medium">
                     Login
                   </Link>
                 )}
               </SheetTrigger>
+              
               {isLoggedIn && (
                 <SheetContent side="right" className="w-[300px]">
                   <SheetHeader>
-                    <SheetTitle>Hello, {userName}</SheetTitle>
+                    <SheetTitle className="text-left">Hello, {userName}</SheetTitle>
                   </SheetHeader>
                   <div className="flex flex-col space-y-2 mt-6">
-                    <Button
-                      variant="ghost"
-                      asChild
-                      className="justify-between text-base"
-                    >
+                    {/* LINK ADDED HERE */}
+                    <Button variant="ghost" asChild className="justify-between text-base h-12">
                       <Link href="/account">
-                        Account Management <ChevronRight className="h-4 w-4" />
+                        <span className="flex items-center gap-3">
+                          <Settings className="h-4 w-4 text-gray-500" /> Account Settings
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
                       </Link>
                     </Button>
+
+                    <Button variant="ghost" asChild className="justify-between text-base h-12">
+                      <Link href="/orders">
+                        <span className="flex items-center gap-3">
+                          <ShoppingCart className="h-4 w-4 text-gray-500" /> My Orders
+                        </span>
+                        <ChevronRight className="h-4 w-4 text-gray-400" />
+                      </Link>
+                    </Button>
+
                     {userRole === "admin" && (
-                      <Button
-                        variant="ghost"
-                        asChild
-                        className="justify-between text-base"
-                      >
+                      <Button variant="ghost" asChild className="justify-between text-base h-12">
                         <Link href="/admin">
-                          Admin Panel <ChevronRight className="h-4 w-4" />
+                          <span className="flex items-center gap-3 font-semibold text-blue-600">
+                             Admin Panel
+                          </span>
+                          <ChevronRight className="h-4 w-4 text-blue-600" />
                         </Link>
                       </Button>
                     )}
@@ -207,17 +217,22 @@ export default function Header({
         </nav>
       </div>
 
-      {/* --- Second Bar (Search) --- */}
-      {/* Hide this bar completely if we are on ANY admin page */}
+      {/* --- Search Bar --- */}
       {!isAdminPage && (
         <div className="p-3 bg-white border-b shadow-sm">
           <div className="relative max-w-6xl mx-auto">
-            <Input
-              type="search"
-              placeholder="Search Ravi Variety..."
-              className="w-full pl-10 rounded-md border-gray-300"
-            />
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500" />
+            <form onSubmit={handleSearch}>
+              <Input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search Ravi Variety..."
+                className="w-full pl-10 rounded-md border-gray-300"
+              />
+              <button type="submit" className="absolute left-3 top-1/2 -translate-y-1/2">
+                <Search className="h-5 w-5 text-gray-500" />
+              </button>
+            </form>
           </div>
         </div>
       )}

@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Phone } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams();
+  const [error, setError] = useState<string | null>(searchParams.get("error")) 
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createClient()

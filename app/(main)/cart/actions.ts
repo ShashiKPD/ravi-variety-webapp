@@ -4,6 +4,18 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+async function validateUser(supabase: any, userId: string) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", userId)
+    .single();
+  
+  if (profile && profile.is_active === false) {
+    return false;
+  }
+  return true;
+}
 // This Server Action will be called by our button
 export async function addToCart(productId: number, quantity: number = 1) {
   const supabase = await createClient();
@@ -12,6 +24,11 @@ export async function addToCart(productId: number, quantity: number = 1) {
 
   if (!user) {
     return { error: "You must be logged in to add to cart." };
+  }
+  // Check Status
+  const isValid = await validateUser(supabase, user.id);
+  if (!isValid) {
+    redirect("/auth/signout"); 
   }
 
   const { data: existingItem, error: fetchError } = await supabase
@@ -67,6 +84,10 @@ export async function removeItem(productId: number) {
     return { error: "You must be logged in." };
   }
 
+  if (!(await validateUser(supabase, user.id))) {
+    redirect("/auth/signout");
+  }
+
   // Find and delete the item
   const { error } = await supabase
     .from("cart_items")
@@ -91,6 +112,9 @@ export async function updateQuantity(productId: number, newQuantity: number) {
 
   if (!user) {
     return { error: "You must be logged in." };
+  }
+  if (!(await validateUser(supabase, user.id))) {
+    redirect("/auth/signout");
   }
 
   // If quantity is 0, remove the item
@@ -118,6 +142,10 @@ export async function submitOrder() {
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
+
+  if (!(await validateUser(supabase, user.id))) {
+    redirect("/auth/signout");
+  }
 
   try {
     // Call the Transactional RPC

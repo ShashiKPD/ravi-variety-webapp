@@ -24,7 +24,6 @@ type ProfileData = {
   is_active: boolean | null;
 };
 
-// Update props to accept orderCount
 export default function EditUserForm({ user, orderCount }: { user: ProfileData, orderCount: number }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -82,8 +81,6 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
 
   return (
     <div className="space-y-8">
-      
-      {/* --- EDIT FORM (Same as before) --- */}
       <form action={handleSubmit} className="space-y-6">
         <input type="hidden" name="id" value={user.id} />
 
@@ -105,14 +102,41 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-500">Email Address (Read Only)</Label>
-          <Input id="email" value={user.email || ""} disabled className="bg-gray-50 text-gray-500 cursor-not-allowed" />
+        {/* --- CREDENTIALS ROW (RESTORED) --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-gray-600">Login ID (Phone)</Label>
+            <Input 
+              id="phone" 
+              value={user.phone || ""} 
+              disabled 
+              className="bg-gray-100 text-gray-500 cursor-not-allowed" 
+            />
+            <p className="text-[10px] text-gray-400">Login ID cannot be changed.</p>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Set New Password</Label>
+            <Input 
+              id="password" 
+              name="password" 
+              type="password" 
+              placeholder="Leave blank to keep current" 
+              minLength={6}
+              className="bg-white"
+            />
+          </div>
         </div>
 
+        {/* Contact */}
         <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
-          <Input id="phone" name="phone" type="tel" defaultValue={user.phone || ""} />
+          <Label htmlFor="email">Email Address (Invoices)</Label>
+          <Input 
+            id="email" 
+            name="email" 
+            type="email" 
+            defaultValue={user.email || ""} 
+            placeholder="billing@example.com"
+          />
         </div>
 
         <div className="space-y-2">
@@ -128,11 +152,11 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
         <div className="grid grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="latitude">Latitude</Label>
-            <Input id="latitude" name="latitude" type="number" step="any" defaultValue={user.latitude || ""} placeholder="22.5726" />
+            <Input id="latitude" name="latitude" type="number" step="any" defaultValue={user.latitude || ""} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="longitude">Longitude</Label>
-            <Input id="longitude" name="longitude" type="number" step="any" defaultValue={user.longitude || ""} placeholder="88.3639" />
+            <Input id="longitude" name="longitude" type="number" step="any" defaultValue={user.longitude || ""} />
           </div>
         </div>
 
@@ -160,16 +184,14 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
       {/* --- DANGER ZONE --- */}
       <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mt-12 space-y-4">
         
-        {/* 1. Disable Section */}
+        {/* Disable Section */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
               <Ban className="w-4 h-4" /> Account Access
             </h3>
             <p className="text-xs text-gray-600 mt-1">
-              {isActive 
-                ? "User has full access to the platform." 
-                : "User is currently banned from logging in."}
+              {isActive ? "User has full access." : "User is currently banned."}
             </p>
           </div>
           <Button 
@@ -179,17 +201,11 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
             disabled={isToggling || isLoading}
             className={`w-full sm:w-auto ${!isActive && "bg-green-600 hover:bg-green-700 text-white"}`}
           >
-            {isToggling ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : isActive ? (
-              <>Disable Account</>
-            ) : (
-              <><CheckCircle className="w-4 h-4 mr-2" /> Enable Account</>
-            )}
+            {isToggling ? <Loader2 className="w-4 h-4 animate-spin" /> : isActive ? "Disable Account" : "Enable Account"}
           </Button>
         </div>
 
-        {/* 2. Delete Section */}
+        {/* Delete Section with Safety Check */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
           <div>
             <h3 className="text-sm font-bold text-red-900 flex items-center gap-2">
@@ -209,9 +225,7 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
           <Button 
             type="button" 
             onClick={handleDelete}
-            // Disable if loading OR if user has orders
             disabled={isDeleting || isLoading || hasOrders}
-            // Force red color with inline style to bypass CSS conflicts
             style={{ backgroundColor: hasOrders ? undefined : '#dc2626', color: 'white' }}
             className={`w-full sm:w-auto ${hasOrders ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'}`}
           >
@@ -219,7 +233,6 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
             Delete User
           </Button>
         </div>
-
       </div>
     </div>
   );

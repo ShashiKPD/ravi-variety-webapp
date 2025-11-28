@@ -12,43 +12,79 @@ export async function updateUserProfile(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
+  // Verify Admin Role
+  const { data: adminProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (adminProfile?.role !== 'admin') {
+    return { error: "Unauthorized action." };
+  }
+
   // 2. Extract Data
   const userId = formData.get("id") as string;
   const fullName = formData.get("full_name") as string;
   const role = formData.get("role") as string;
-  const phone = formData.get("phone") as string;
+  const email = formData.get("email") as string;
+  // phone is read-only in UI, usually ignored here or just kept as is
   const address = formData.get("address_text") as string;
+  const password = formData.get("password") as string; // <--- NEW FIELD
   
-  // Handle Numbers (Lat/Lng) - convert empty strings to null
   const latStr = formData.get("latitude") as string;
   const lngStr = formData.get("longitude") as string;
   const latitude = latStr ? parseFloat(latStr) : null;
   const longitude = lngStr ? parseFloat(lngStr) : null;
 
-  // 3. Update Database
-  // We strictly update the public.profiles table
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      full_name: fullName,
-      role: role,
-      phone: phone,
-      address_text: address,
-      latitude: latitude,
-      longitude: longitude,
-      // Note: We usually don't update email here to avoid sync issues with Auth
-    })
-    .eq("id", userId);
+  // 3. Initialize Admin Client (Required for Password & Email Auth updates)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
 
-  if (error) {
+  try {
+    // 4. Update Auth Data (Password & Email)
+    const authUpdates: { password?: string; email?: string } = {};
+    if (password && password.trim().length >= 6) {
+      authUpdates.password = password.trim();
+    }
+    if (email) {
+      authUpdates.email = email.trim();
+    }
+
+    if (Object.keys(authUpdates).length > 0) {
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+        userId,
+        authUpdates
+      );
+      if (authError) throw authError;
+    }
+
+    // 5. Update Profile Data
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        full_name: fullName,
+        role: role,
+        email: email, // Sync to profile
+        address_text: address,
+        latitude: latitude,
+        longitude: longitude,
+      })
+      .eq("id", userId);
+
+    if (profileError) throw profileError;
+
+    revalidatePath(`/admin/users/${userId}`);
+    revalidatePath("/admin/users");
+    
+    return { success: "User updated successfully" };
+
+  } catch (error: any) {
     return { error: error.message };
   }
-
-  // 4. Revalidate & Redirect
-  revalidatePath(`/admin/users/${userId}`);
-  revalidatePath("/admin/users");
-  
-  return { success: "User updated successfully" };
 }
 
 export async function deleteUser(userId: string) {

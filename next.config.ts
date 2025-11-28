@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
         // Paste your Supabase project ref here
         hostname: "enypxizrldolzhaomnpf.supabase.co", 
         port: "",
-        pathname: "/storage/v1/object/public/product-images/**",
+        pathname: "/storage/v1/object/public/**",
       },
     ],
   },
