@@ -43,7 +43,7 @@ export default function HorizontalProductCard({
   return (
     <Card className="w-full overflow-hidden flex flex-row h-32 sm:h-40 mb-3 relative hover:shadow-md transition-shadow border-gray-200">
       {/* Image Section (Left) */}
-      <div className="relative w-28 sm:w-40 h-full bg-white flex-shrink-0 border-r border-gray-100">
+      <div className="relative w-28 sm:w-40 h-full bg-white shrink-0 border-r border-gray-100">
          <Link href={`/p/${product.product_slug}/${product.variant_id}`} className="block w-full h-full">
             <Image
               src={product.thumbnail_url || "/placeholder.png"}
@@ -84,7 +84,7 @@ export default function HorizontalProductCard({
           </div>
           
           {/* Price on the right */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
              {priceDisplay}
           </div>
         </div>

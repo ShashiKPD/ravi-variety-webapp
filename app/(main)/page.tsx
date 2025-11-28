@@ -94,7 +94,7 @@ export default async function HomePage() {
               <Link
                 href={`/category/${category.id}`}
                 key={category.id}
-                className="flex flex-col items-center gap-1 w-20 flex-shrink-0 group cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex flex-col items-center gap-1 w-20 shrink-0 group cursor-pointer hover:opacity-80 transition-opacity"
               >
                 <div className="h-12 w-12 rounded-full bg-gray-100 group-hover:bg-blue-50 flex items-center justify-center transition-colors border border-transparent group-hover:border-blue-200">
                   {categoryIcons[category.name as keyof typeof categoryIcons] ||

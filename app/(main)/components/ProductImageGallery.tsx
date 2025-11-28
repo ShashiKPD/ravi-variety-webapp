@@ -32,7 +32,7 @@ export default function ProductImageGallery({ images, title }: Props) {
               key={idx}
               onClick={() => setMainImage(img)}
               className={cn(
-                "relative w-16 h-16 flex-shrink-0 rounded-md border bg-white overflow-hidden hover:ring-2 ring-blue-500 transition-all",
+                "relative w-16 h-16 shrink-0 rounded-md border bg-white overflow-hidden hover:ring-2 ring-blue-500 transition-all",
                 mainImage === img ? "ring-2 ring-blue-600" : "border-gray-200"
               )}
             >

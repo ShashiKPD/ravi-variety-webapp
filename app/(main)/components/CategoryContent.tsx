@@ -137,7 +137,7 @@ export default function CategoryContent({
       </div>
 
       {/* --- Desktop Sidebar --- */}
-      <aside className="w-64 flex-shrink-0 hidden lg:block">
+      <aside className="w-64 shrink-0 hidden lg:block">
         <div className="sticky top-24">
             <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-3 border-b bg-gray-50/50">

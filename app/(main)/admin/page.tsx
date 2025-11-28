@@ -20,18 +20,20 @@ export default function AdminDashboardPage() {
         
         {/* --- Product Management Card (Modified) --- */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+          <CardHeader>
             <CardTitle>Product Management</CardTitle>
-            <Package className="h-6 w-6 text-gray-500" />
+            <CardDescription>Manage catalog, prices, and stock.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <CardDescription>
-              Add new products and edit existing items in your catalog.
-            </CardDescription>
-            <Button asChild>
-              <Link href="/admin/products/new">Add New Product</Link>
+          <CardContent className="grid grid-cols-2 gap-2">
+            {/* PRIMARY ACTION: View List */}
+            <Button asChild className="w-full" variant="default">
+              <Link href="/admin/products">View Inventory</Link>
             </Button>
-            {/* "View All Products" link can go here later */}
+            
+            {/* SECONDARY ACTION: Add New */}
+            <Button asChild className="w-full" variant="outline">
+              <Link href="/admin/products/new">Add Product</Link>
+            </Button>
           </CardContent>
         </Card>
 
