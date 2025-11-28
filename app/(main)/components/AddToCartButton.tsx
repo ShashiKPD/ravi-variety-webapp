@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-// import { addToCart } from "../app/(main)/cart/actions"; // Check import path
-import {addToCart} from "@/app/(main)/cart/actions";
+import { addToCart } from "../cart/actions"; 
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Loader2 } from "lucide-react";
+import { ShoppingCart, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+// import { useToast } from "@/components/ui/use-toast"; // If you have toast
 
-// Updated Props
 export default function AddToCartButton({ 
   productId, 
   quantity = 1,
@@ -17,39 +16,47 @@ export default function AddToCartButton({
   quantity?: number,
   className?: string
 }) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAdded, setIsAdded] = useState(false);
+  const [isPending, setIsPending] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleCartClick = async () => {
-    setIsLoading(true);
-    // Pass the quantity to the server action
+    // 1. Instant Feedback State
+    setIsPending(true);
+    
+    // 2. Perform Action
     const result = await addToCart(productId, quantity);
-    setIsLoading(false);
+    
+    setIsPending(false);
 
     if (result.error) {
-      alert(result.error); 
+      alert(result.error); // Or use toast({ variant: "destructive" ... })
     } else {
-      setIsAdded(true);
-      setTimeout(() => setIsAdded(false), 2000);
+      // 3. Success Feedback
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 2000);
     }
   };
 
   return (
     <Button
       onClick={handleCartClick}
-      disabled={isLoading || isAdded}
-      className={cn("w-full", className)}
+      disabled={isPending || isSuccess}
+      className={cn("w-full transition-all duration-200", className, isSuccess && "bg-green-600 hover:bg-green-700 text-white")}
     >
-      {isAdded ? (
-        "Added!"
+      {isSuccess ? (
+        <>
+          <Check className="h-4 w-4 mr-2" />
+          Added
+        </>
+      ) : isPending ? (
+        <>
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          Adding...
+        </>
       ) : (
         <>
-          {isLoading ? (
-             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-             <ShoppingCart className="h-4 w-4 mr-2" />
-          )}
-          {isLoading ? "Adding..." : "Add to Cart"}
+          <ShoppingCart className="h-4 w-4 mr-2" />
+          Add to Cart
         </>
       )}
     </Button>
