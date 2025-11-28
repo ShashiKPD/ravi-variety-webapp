@@ -1,54 +1,62 @@
 "use client";
 
 import { useState } from "react";
-import { toggleWishlistItem } from "../wishlist/actions"; // 1. Import the Server Action
-import { Button } from "@/components/ui/button";
 import { Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { toggleWishlistItem } from "../wishlist/actions"; 
+import { useRouter } from "next/navigation";
 
-export default function WishlistButton({
-  productId,
-  isInitiallyWishlisted = false, // 1. Accept the initial state prop
-}: {
+type Props = {
   productId: number;
-  isInitiallyWishlisted?: boolean;
-}) {
+  isInitiallyWishlisted: boolean;
+};
+
+export default function WishlistButton({ productId, isInitiallyWishlisted }: Props) {
   const [isWishlisted, setIsWishlisted] = useState(isInitiallyWishlisted);
   const [isLoading, setIsLoading] = useState(false);
-  
-  const handleWishlistClick = async () => {
-    // 3. Optimistic Update:
-    //    We immediately toggle the state *before* calling the server.
-    const originalState = isWishlisted;
-    setIsWishlisted(!originalState);
+  const router = useRouter();
+
+  const handleToggle = async (e: React.MouseEvent) => {
+    e.preventDefault(); 
+    e.stopPropagation(); 
+
+    const previousState = isWishlisted;
+    
+    setIsWishlisted(!previousState);
     setIsLoading(true);
 
     const result = await toggleWishlistItem(productId);
-    console.log(result.success);
 
     setIsLoading(false);
 
-    // 4. If the server call fails, we revert the state
     if (result.error) {
-      alert(result.error);
-      setIsWishlisted(originalState); // Revert on error
+      setIsWishlisted(previousState);
+      if (result.error.includes("logged in")) {
+        router.push("/login");
+      } else {
+        alert(result.error);
+      }
+    } else {
+      if (result.isWishlisted !== undefined) {
+        setIsWishlisted(result.isWishlisted);
+      }
     }
-    // On success, we do nothing. The optimistic state was correct.
   };
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={handleWishlistClick}
+      className="rounded-full hover:bg-gray-100"
+      onClick={handleToggle}
       disabled={isLoading}
-      className="absolute top-2 right-2 z-10" // Position it
     >
       <Heart
-        className={`h-6 w-6 transition-colors ${
-          isWishlisted
-            ? "fill-red-500 text-red-500" // Filled and red
-            : "text-gray-500" // Just the gray outline
-        }`}
+        className={cn(
+          "h-5 w-5 transition-all duration-200",
+          isWishlisted ? "fill-red-500 text-red-500 scale-110" : "text-gray-400 hover:text-gray-600"
+        )}
       />
     </Button>
   );
