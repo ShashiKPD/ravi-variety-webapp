@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { approveOrder, rejectOrder } from "../../orders/actions"; // Adjusted path to actions
+import { approveOrder, rejectOrder } from "../../orders/actions";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 
 export default function OrderActions({ orderId }: { orderId: number }) {
@@ -25,10 +25,11 @@ export default function OrderActions({ orderId }: { orderId: number }) {
   };
 
   return (
-    <div className="flex gap-3">
+    // FIXED: flex-col on mobile, flex-row on desktop
+    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
       <Button 
         variant="outline" 
-        className="border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
+        className="w-full sm:w-auto border-red-200 text-red-700 hover:bg-red-50 hover:text-red-800"
         onClick={handleReject}
         disabled={loading}
       >
@@ -37,7 +38,7 @@ export default function OrderActions({ orderId }: { orderId: number }) {
       </Button>
       
       <Button 
-        className="bg-green-600 hover:bg-green-700 text-white"
+        className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
         onClick={handleApprove}
         disabled={loading}
       >

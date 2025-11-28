@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Save, Loader2, CheckCircle2 } from "lucide-react";
-import { updateProductQuick } from "../../../actions"; // Import your server action
+import { updateProductQuick } from "../../../actions";
 
 type ProductData = {
   id: number;
@@ -35,7 +35,6 @@ export default function QuickEditForm({
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Initial State
   const initialState = {
     name: product.name,
     sku: product.sku,
@@ -46,10 +45,7 @@ export default function QuickEditForm({
     mrp: prices.mrp
   };
 
-  // Current State
   const [formData, setFormData] = useState(initialState);
-
-  // Check if dirty (naive comparison works well for flat objects)
   const isDirty = JSON.stringify(formData) !== JSON.stringify(initialState);
 
   const handleChange = (field: string, value: any) => {
@@ -60,7 +56,6 @@ export default function QuickEditForm({
     e.preventDefault();
     setIsLoading(true);
 
-    // Create FormData object for the Server Action
     const payload = new FormData();
     payload.append("product_id", String(product.id));
     payload.append("name", formData.name);
@@ -80,7 +75,6 @@ export default function QuickEditForm({
       alert(result.error);
     } else {
       setIsSuccess(true);
-      // Small delay to show the "Success" state before redirecting
       setTimeout(() => {
         router.push("/admin/products");
         router.refresh();
@@ -167,7 +161,8 @@ export default function QuickEditForm({
       </Card>
 
       <Card className="mt-6 border-t-4 border-t-blue-600">
-        <CardContent className="pt-6 flex items-center justify-between">
+        {/* FIXED: Changed to flex-col on mobile, flex-row on desktop */}
+        <CardContent className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
              <Switch 
                id="feat" 
@@ -177,19 +172,21 @@ export default function QuickEditForm({
              <Label htmlFor="feat">Feature on Homepage</Label>
           </div>
           
-          <div className="flex gap-3">
+          {/* FIXED: Buttons stack on mobile, align right on desktop */}
+          <div className="flex flex-col-reverse sm:flex-row gap-3 w-full sm:w-auto">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => router.back()}
               disabled={isLoading || isSuccess}
+              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
             <Button 
               type="submit" 
               disabled={!isDirty || isLoading || isSuccess}
-              className={`min-w-[140px] ${isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"} text-white`}
+              className={`w-full sm:w-auto min-w-[140px] ${isSuccess ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"} text-white`}
             >
               {isLoading ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving...</>
