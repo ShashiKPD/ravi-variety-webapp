@@ -2,73 +2,61 @@ import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  // 1. Get the data from the request
-  const { email, password, full_name, role } = await request.json();
+  // 1. Receive Email AND Phone
+  const { phone, email, password, full_name, role, address, latitude, longitude } = await request.json();
 
-  // 2. Get our secret keys from the environment
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return new NextResponse("Supabase config missing", { status: 500 });
-  }
+  if (!supabaseUrl || !supabaseServiceKey) return new NextResponse("Config error", { status: 500 });
 
-  // 3. Create a new Supabase client with ADMIN privileges
-  // This client can bypass RLS (Row Level Security)
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+    auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // 4. Create the new user in the 'auth.users' table
+  // 2. Create User with BOTH attributes
   const { data: authData, error: authError } =
     await supabaseAdmin.auth.admin.createUser({
-      email: email,
+      phone: phone,
+      email: email, // Added back
       password: password,
-      email_confirm: true, // We auto-confirm them since we are the admin
+      phone_confirm: true, // Auto-confirm phone
+      email_confirm: true, // Auto-confirm email
+      user_metadata: { full_name, role }
     });
 
   if (authError) {
-    console.error("Error creating user:", authError);
     return new NextResponse(authError.message, { status: 400 });
   }
 
-  // 5. If user creation was successful, add their profile to our 'profiles' table
+  // 3. Upsert Profile
+  // The Trigger creates the row, but we run this to ensure address/lat/long/phone are set
   if (authData.user) {
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .insert({
-        id: authData.user.id, // This is the foreign key link
+      .upsert({
+        id: authData.user.id,
         full_name: full_name,
         role: role,
+        email: email, // Store in profiles
+        phone: phone, // Store in profiles
+        address_text: address || null,
+        latitude: latitude ? parseFloat(latitude) : null,
+        longitude: longitude ? parseFloat(longitude) : null,
       });
 
     if (profileError) {
-      console.error("Error creating profile:", profileError);
-      // This is tricky: the auth user was created but the profile failed.
-      // We should ideally delete the auth user here, but for now, we'll just report the error.
       return new NextResponse(profileError.message, { status: 400 });
     }
 
-    // 6. All good!
     return new NextResponse(
       JSON.stringify({ 
         message: "User created successfully",
-        // We send back the data we just created
-        user: { 
-          full_name: full_name,
-          role: role,
-          email: email 
-        } 
+        user: { full_name, role, phone } 
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      }
+      { status: 200 }
     );
   }
 
-  return new NextResponse("An unknown error occurred", { status: 500 });
+  return new NextResponse("Unknown error", { status: 500 });
 }

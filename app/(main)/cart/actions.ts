@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 // This Server Action will be called by our button
 export async function addToCart(productId: number, quantity: number = 1) {
@@ -110,4 +111,30 @@ export async function updateQuantity(productId: number, newQuantity: number) {
 
   revalidatePath("/cart");
   return { success: "Quantity updated." };
+}
+
+export async function submitOrder() {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    // Call the Transactional RPC
+    const { data: orderId, error } = await supabase
+      .rpc("place_order", { p_user_id: user.id });
+
+    if (error) throw error;
+
+    // Redirect to the new Order Details page
+    // We use redirect() outside the try/catch block usually, 
+    // but inside an action it throws an error that Next.js catches. 
+    // So we return the ID and let the Client Component handle the redirect 
+    // OR we just redirect here if we are in a <form> context.
+    return { success: true, orderId };
+
+  } catch (error: any) {
+    console.error("Order Failed:", error);
+    return { error: error.message || "Failed to place order." };
+  }
 }

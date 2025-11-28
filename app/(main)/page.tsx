@@ -42,12 +42,12 @@ export default async function HomePage() {
   if (user) {
     const [profileRes, wishlistRes] = await Promise.all([
       supabase.from("profiles").select("role").eq("id", user.id).single(),
-      supabase.from("wishlist_items").select("variant_id").eq("user_id", user.id),
+      supabase.from("wishlist_items").select("product_id").eq("user_id", user.id),
     ]);
 
     userRole = profileRes.data?.role || "anon";
     if (wishlistRes.data) {
-      wishlistVariantIds = new Set(wishlistRes.data.map((item) => item.variant_id));
+      wishlistVariantIds = new Set(wishlistRes.data.map((item) => item.product_id));
     }
     showInteractiveButtons = ["retailer", "wholesaler", "admin"].includes(userRole);
   }
