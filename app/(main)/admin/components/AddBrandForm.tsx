@@ -38,7 +38,7 @@ export default function AddBrandForm() {
       if (result.error) {
         setError(result.error);
       } else {
-        setMessage(result.success);
+        setMessage(result.success ?? "");
         setBrands([{ id: 1, name: "" }]);
       }
     });

@@ -7,11 +7,12 @@ import { createProductStack } from "../products/actions";
 import { ProductInput } from "./product-form/types";
 import Classification from "./product-form/Classification";
 import ProductCard from "./product-form/ProductCard";
+import { ExistingGroup } from "../components/product-form/types";
 
 type Props = {
   categories: { id: number; name: string }[];
   brands: { id: number; name: string }[];
-  existingGroups: { id: number; name: string; brandName: string }[];
+  existingGroups: ExistingGroup[];
 };
 
 export default function ProductStackForm({ categories, brands, existingGroups }: Props) {

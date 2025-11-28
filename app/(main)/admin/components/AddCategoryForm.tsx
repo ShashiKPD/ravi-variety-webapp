@@ -61,7 +61,7 @@ export default function AddCategoryForm() {
       if (result.error) {
         setError(result.error);
       } else {
-        setMessage(result.success);
+        setMessage(result.success ?? "");
         setCategories([{ id: 1, name: "" }]); // Reset form on success
       }
     });
