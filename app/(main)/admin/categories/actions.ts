@@ -3,62 +3,109 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
-// Helper to make a slug (e.g. "Mango Pickle" -> "mango-pickle")
 function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "") // Remove non-word chars
-    .replace(/[\s_-]+/g, "-") // Replace spaces/underscores with -
-    .replace(/^-+|-+$/g, ""); // Trim - from start/end
+  return name.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
 }
 
-export async function addCategories(formData: FormData) {
+// Helper to upload file
+async function uploadImage(file: File, path: string) {
   const supabase = await createClient();
+  const { error } = await supabase.storage.from("product-images").upload(path, file);
+  if (error) throw new Error("Image upload failed: " + error.message);
+  const { data } = supabase.storage.from("product-images").getPublicUrl(path);
+  return data.publicUrl;
+}
 
-  // 1. Check for admin
+// 1. CREATE
+export async function createCategory(formData: FormData) {
+  const supabase = await createClient();
+  
+  // Auth Check
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  
-  if (profile?.role !== 'admin') {
-    return { error: "Forbidden: You must be an admin." };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== 'admin') return { error: "Forbidden" };
+
+  // Data Extraction
+  const name = formData.get("name") as string;
+  const imageFile = formData.get("image") as File;
+
+  if (!name) return { error: "Name is required" };
+
+  let imageUrl = null;
+  if (imageFile && imageFile.size > 0) {
+    const path = `categories/${Date.now()}-${imageFile.name}`;
+    imageUrl = await uploadImage(imageFile, path);
   }
 
-  // 2. Get names
-  const categoryNames = formData.getAll("category_name") as string[];
-
-  // 3. Format data with SLUGS
-  const categoriesToInsert = categoryNames
-    .map(name => name.trim())
-    .filter(name => name.length > 0)
-    .map(name => ({ 
-      name: name,
-      slug: generateSlug(name) // <--- THIS FIXES YOUR ERROR
-    }));
-
-  if (categoriesToInsert.length === 0) {
-    return { error: "All category names were empty." };
-  }
-
-  // 4. Insert
-  const { error } = await supabase.from("categories").insert(categoriesToInsert);
+  const { error } = await supabase.from("categories").insert({
+    name,
+    slug: generateSlug(name),
+    image_url: imageUrl
+  });
 
   if (error) {
-    if (error.code === '23505') {
-      return { error: "Error: One or more categories (or their slugs) already exist." };
-    }
-    return { error: `Database error: ${error.message}` };
+    if (error.code === '23505') return { error: "Category already exists." };
+    return { error: error.message };
+  }
+  
+  revalidatePath("/admin/categories/new");
+  return { success: "Category created" };
+}
+
+// 2. UPDATE
+export async function updateCategory(formData: FormData) {
+  const supabase = await createClient();
+  
+  // Auth Check
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const id = formData.get("id") as string;
+  const name = formData.get("name") as string;
+  const imageFile = formData.get("image") as File;
+
+  const updates: any = { name, slug: generateSlug(name) };
+
+  if (imageFile && imageFile.size > 0) {
+    const path = `categories/${Date.now()}-${imageFile.name}`;
+    updates.image_url = await uploadImage(imageFile, path);
   }
 
-  revalidatePath("/");
-  revalidatePath("/admin/categories/new");
-  revalidatePath("/admin/products/new");
+  const { error } = await supabase.from("categories").update(updates).eq("id", id);
 
-  return { success: `${categoriesToInsert.length} categories added successfully!` };
+  if (error) return { error: error.message };
+  
+  revalidatePath("/admin/categories/new");
+  return { success: "Category updated" };
+}
+
+// 3. DELETE
+export async function deleteCategory(id: number) {
+  const supabase = await createClient();
+  
+  // Auth Check
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  // 1. Check if Category is in use
+  const { count, error: countError } = await supabase
+    .from("product_groups")
+    .select("id", { count: "exact", head: true })
+    .eq("category_id", id);
+
+  if (countError) return { error: countError.message };
+  
+  if (count && count > 0) {
+    return { error: `Cannot delete: This category is used by ${count} product families.` };
+  }
+
+  // 2. Proceed with Delete
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  
+  if (error) return { error: error.message };
+  
+  revalidatePath("/admin/categories/new");
+  return { success: "Category deleted" };
 }

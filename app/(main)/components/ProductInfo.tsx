@@ -34,7 +34,15 @@ export default function ProductInfo({
   const [activeUnitTestPrice, setActiveUnitTestPrice] = useState<number>(0);
 
   const currentMrp = priceData && priceData.mrp ? priceData.mrp : 0;
+  const isAnonymous = userRole === "anon";
 
+  // 1. FORCE SCROLL TO TOP
+  // This ensures that whenever a new variant loads, the page jumps to the top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentVariant.id]);
+
+  // 2. Price Calculation Logic
   useEffect(() => {
     if (!priceData) return;
     let finalPrice = priceData.sale_price || priceData.unit_price;
@@ -89,9 +97,9 @@ export default function ProductInfo({
 
       <Separator className="mb-6" />
 
-      {/* PRICE DISPLAY */}
-      <div className="mb-6">
-        {userRole !== "anon" && priceData ? (
+      {/* PRICE DISPLAY (Only for Logged In) */}
+      {!isAnonymous && priceData && (
+        <div className="mb-6">
           <div>
             <div className="flex items-baseline gap-3 mb-1">
               <span className="text-4xl font-bold text-gray-900">₹{activeUnitTestPrice}</span>
@@ -101,13 +109,8 @@ export default function ProductInfo({
             </div>
             <p className="text-sm text-gray-500">Price per unit (incl. taxes)</p>
           </div>
-        ) : (
-          <div className="p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
-            <p className="text-gray-600 font-medium mb-3">Login to see wholesale pricing</p>
-            <Button asChild className="w-full sm:w-auto"><Link href="/login">Login to View Prices</Link></Button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 1. SIZE VARIANTS */}
       {sizeVariants.length > 1 && (
@@ -117,7 +120,6 @@ export default function ProductInfo({
             {sizeVariants.map((variant: any) => {
                const isActive = variant.id === currentVariant.id;
                return (
-                 // FIXED: Removed scroll={false} so page starts from top on navigation
                  <Link key={variant.id} href={`/p/${variant.slug}/${variant.id}`}>
                     <div className={cn(
                         "px-4 py-2 text-sm font-medium rounded-lg border transition-all",
@@ -163,38 +165,39 @@ export default function ProductInfo({
         </div>
       )}
 
-      {/* ACTION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 lg:static lg:border-none lg:shadow-none lg:p-0 lg:mb-8">
-        <div className="flex gap-4 max-w-7xl mx-auto lg:mx-0">
-           <div className="w-24 shrink-0">
-             <Input 
-               type="number" 
-               min={1} 
-               value={quantity} 
-               onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-               className="text-center h-11 font-medium text-lg"
-             />
-           </div>
-           <div className="flex-1 min-w-0">
-              <AddToCartButton 
-                productId={currentVariant.id} 
-                quantity={quantity}
-                className="h-11 text-base font-medium w-full"
-              />
-           </div>
-           <div className="flex-none">
-              {/* FIXED: Increased size to h-11 w-11 and added rounded-md to match AddToCart button */}
-              <WishlistButton 
-                productId={currentVariant.id} 
-                isInitiallyWishlisted={isWishlisted} 
-                className="h-11 w-11 rounded-md border-gray-300 [&_svg]:h-6 [&_svg]:w-6"
-              />
-           </div>
+      {/* ACTION BAR (Only for Logged In) */}
+      {!isAnonymous && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 lg:static lg:border-none lg:shadow-none lg:p-0 lg:mb-8">
+          <div className="flex gap-4 max-w-7xl mx-auto lg:mx-0">
+             <div className="w-24 shrink-0">
+               <Input 
+                 type="number" 
+                 min={1} 
+                 value={quantity} 
+                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                 className="text-center h-11 font-medium text-lg"
+               />
+             </div>
+             <div className="flex-1 min-w-0">
+                <AddToCartButton 
+                  productId={currentVariant.id} 
+                  quantity={quantity}
+                  className="h-11 text-base font-medium w-full"
+                />
+             </div>
+             <div className="flex-none">
+                <WishlistButton 
+                  productId={currentVariant.id} 
+                  isInitiallyWishlisted={isWishlisted} 
+                  className="h-11 w-11 rounded-md border-gray-300 [&_svg]:h-6 [&_svg]:w-6"
+                />
+             </div>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* 3. BUY IN BULK TABLE */}
-      {userRole !== "anon" && processedTiers.length > 1 && (
+      {/* 3. BUY IN BULK TABLE (Only for Logged In) */}
+      {!isAnonymous && processedTiers.length > 1 && (
         <div className="mb-8 mt-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
           <h3 className="font-bold text-gray-900 mb-4 text-base">Buy In Bulk</h3>
           
@@ -230,7 +233,7 @@ export default function ProductInfo({
         </div>
       )}
 
-      {/* DESCRIPTION */}
+      {/* DESCRIPTION (Visible to All) */}
       <div className="pt-6 border-t">
          <h3 className="text-lg font-bold mb-3">About this item</h3>
          <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">

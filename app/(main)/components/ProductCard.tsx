@@ -14,8 +14,10 @@ export default function ProductCard({
   showInteractiveButtons?: boolean;
   isInitiallyWishlisted?: boolean;
 }) {
-  let priceDisplay = <p className="text-sm text-gray-500">Log in to see price</p>;
+  // Default: Render nothing (Oblivious Catalog Mode)
+  let priceDisplay = null;
 
+  // Only render price if data exists (Logged in users)
   if (product.price_data) {
     const { unit_price, sale_price, mrp } = product.price_data;
     const activePrice = sale_price && sale_price > 0 ? sale_price : unit_price;
@@ -40,7 +42,6 @@ export default function ProductCard({
   return (
     <Card className="w-full relative overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow gap-0 py-0 group">
         
-        {/* FIX: Absolute positioning to pin to Top Right */}
         {showInteractiveButtons && (
           <div className="absolute top-2 right-2 z-10">
             <WishlistButton
@@ -73,12 +74,18 @@ export default function ProductCard({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="p-3 pt-2 mt-auto">
-        <div className="mb-3">{priceDisplay}</div>
-        {showInteractiveButtons && (
-          <AddToCartButton productId={product.variant_id} />
-        )}
-      </CardContent>
+      {/* Only render content padding if there is something to show */}
+      {(priceDisplay || showInteractiveButtons) ? (
+        <CardContent className="p-3 pt-2 mt-auto">
+          <div className="mb-3 min-h-[1.5rem]">{priceDisplay}</div>
+          {showInteractiveButtons && (
+            <AddToCartButton productId={product.variant_id} />
+          )}
+        </CardContent>
+      ) : (
+        // Spacer for consistent card height if needed, or just let it shrink
+        <div className="pb-4" />
+      )}
     </Card>
   );
 }

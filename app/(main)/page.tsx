@@ -11,11 +11,13 @@ import {
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
-import { Leaf, IceCream, Home } from "lucide-react";
+import { redirect } from "next/navigation";
 
-// Helper to fetch prices for a list of products
+// Helper to fetch prices
 async function fetchPricesForProducts(products: ProductSummary[], supabase: any, userRole: string) {
   if (userRole === "anon" || products.length === 0) {
+    // If anon, we return null price_data. 
+    // The ProductCard component already handles this by showing "Log in to see price".
     return products.map(p => ({ ...p, price_data: null }));
   }
 
@@ -34,7 +36,6 @@ async function fetchPricesForProducts(products: ProductSummary[], supabase: any,
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // --- 1. User Context ---
   const { data: { user } } = await supabase.auth.getUser();
   let wishlistVariantIds = new Set<number>();
   let userRole = "anon";
@@ -42,9 +43,14 @@ export default async function HomePage() {
 
   if (user) {
     const [profileRes, wishlistRes] = await Promise.all([
-      supabase.from("profiles").select("role").eq("id", user.id).single(),
+      supabase.from("profiles").select("role, is_active").eq("id", user.id).single(),
       supabase.from("wishlist_items").select("product_id").eq("user_id", user.id),
     ]);
+
+    // Security Check
+    if (profileRes.data && profileRes.data.is_active === false) {
+      redirect("/auth/signout");
+    }
 
     userRole = profileRes.data?.role || "anon";
     if (wishlistRes.data) {
@@ -53,31 +59,21 @@ export default async function HomePage() {
     showInteractiveButtons = ["retailer", "wholesaler", "admin"].includes(userRole);
   }
 
-  // --- 2. Data Fetching (Parallel) ---
-  // RESTORED: Fetching categories along with products
+  // Data Fetching
   const [featuredRes, popularRes, categoriesRes] = await Promise.all([
     supabase.rpc("get_homepage_featured").limit(8),
     supabase.rpc("get_popular_products", { limit_count: 12 }),
-    supabase.from("categories").select("id, name, slug"), // Fetch categories
+    // UPDATED: Added image_url to selection
+    supabase.from("categories").select("id, name, slug, image_url"),
   ]);
 
   if (featuredRes.error) console.error("Featured Error:", featuredRes.error);
   if (popularRes.error) console.error("Popular Error:", popularRes.error);
 
-  // --- 3. Process Data ---
   const featuredProducts = await fetchPricesForProducts((featuredRes.data as ProductSummary[]) || [], supabase, userRole);
   const popularProducts = await fetchPricesForProducts((popularRes.data as ProductSummary[]) || [], supabase, userRole);
   const categories = categoriesRes.data || [];
 
-  // // Icon mapping for categories (You can expand this map as needed)
-  // const categoryIcons = {
-  //   Aachar: <Leaf className="h-6 w-6 text-green-600" />,
-  //   Spices: <Leaf className="h-6 w-6 text-orange-600" />, 
-  //   "Ice Cream": <IceCream className="h-6 w-6 text-pink-500" />,
-  //   Default: <Home className="h-6 w-6 text-blue-500" />,
-  // };
-
-  // --- 4. Mock Hero Banners ---
   const heroBanners = [
     { id: 1, content: "Bulk Savings on Spices", bgColor: "bg-orange-100" },
     { id: 2, content: "New Arrivals: Pickles", bgColor: "bg-green-100" },
@@ -85,29 +81,32 @@ export default async function HomePage() {
 
   return (
     <div className="bg-gray-50 pb-8">
-
+      
+      {/* Category Scroller (Always Visible) */}
       <CategoryScroller categories={categories} />
 
-      {/* --- Hero Carousel --- */}
-      <div className="p-4 pt-2">
-        <Carousel className="w-full" opts={{ loop: true }}>
-          <CarouselContent>
-            {heroBanners.map((banner) => (
-              <CarouselItem key={banner.id}>
-                <Card className="border-0 shadow-sm overflow-hidden">
-                  <CardContent className={`flex aspect-[2.5/1] items-center justify-center p-6 ${banner.bgColor}`}>
-                    <span className="text-2xl sm:text-4xl font-bold text-gray-800">{banner.content}</span>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="left-2 hidden sm:flex" />
-          <CarouselNext className="right-2 hidden sm:flex" />
-        </Carousel>
-      </div>
+      {/* Hero Carousel (Only Visible to Logged In Users) */}
+      {user && (
+        <div className="p-4 pt-2">
+          <Carousel className="w-full" opts={{ loop: true }}>
+            <CarouselContent>
+              {heroBanners.map((banner) => (
+                <CarouselItem key={banner.id}>
+                  <Card className="border-0 shadow-sm overflow-hidden">
+                    <CardContent className={`flex aspect-[2.5/1] items-center justify-center p-6 ${banner.bgColor}`}>
+                      <span className="text-2xl sm:text-4xl font-bold text-gray-800">{banner.content}</span>
+                    </CardContent>
+                  </Card>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-2 hidden sm:flex" />
+            <CarouselNext className="right-2 hidden sm:flex" />
+          </Carousel>
+        </div>
+      )}
 
-      {/* --- Section 1: Featured Products --- */}
+      {/* Featured Section */}
       <section className="p-4 pt-2">
         <div className="flex justify-between items-center mb-4">
            <h2 className="text-xl font-bold text-gray-800">Featured Products</h2>
@@ -130,7 +129,7 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* --- Section 2: Recommended / Popular --- */}
+      {/* Popular Section */}
       <section className="p-4">
         <div className="flex justify-between items-center mb-4">
            <h2 className="text-xl font-bold text-gray-800">Popular & Recommended</h2>
