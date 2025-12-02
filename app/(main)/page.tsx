@@ -12,6 +12,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import Image from "next/image";
 
 // Helper to fetch prices
 async function fetchPricesForProducts(products: ProductSummary[], supabase: any, userRole: string) {
@@ -60,11 +61,12 @@ export default async function HomePage() {
   }
 
   // Data Fetching
-  const [featuredRes, popularRes, categoriesRes] = await Promise.all([
+  const [featuredRes, popularRes, categoriesRes, bannersRes] = await Promise.all([
     supabase.rpc("get_homepage_featured").limit(8),
     supabase.rpc("get_popular_products", { limit_count: 12 }),
     // UPDATED: Added image_url to selection
     supabase.from("categories").select("id, name, slug, image_url"),
+    supabase.from("banners").select("*").order("created_at", { ascending: false })
   ]);
 
   if (featuredRes.error) console.error("Featured Error:", featuredRes.error);
@@ -73,6 +75,7 @@ export default async function HomePage() {
   const featuredProducts = await fetchPricesForProducts((featuredRes.data as ProductSummary[]) || [], supabase, userRole);
   const popularProducts = await fetchPricesForProducts((popularRes.data as ProductSummary[]) || [], supabase, userRole);
   const categories = categoriesRes.data || [];
+  const banners = bannersRes.data || [];
 
   const heroBanners = [
     { id: 1, content: "Bulk Savings on Spices", bgColor: "bg-orange-100" },
@@ -86,16 +89,23 @@ export default async function HomePage() {
       <CategoryScroller categories={categories} />
 
       {/* Hero Carousel (Only Visible to Logged In Users) */}
-      {user && (
+      {user && banners.length > 0 && (
         <div className="p-4 pt-2">
           <Carousel className="w-full" opts={{ loop: true }}>
             <CarouselContent>
-              {heroBanners.map((banner) => (
+              {banners.map((banner) => (
                 <CarouselItem key={banner.id}>
                   <Card className="border-0 shadow-sm overflow-hidden">
-                    <CardContent className={`flex aspect-[2.5/1] items-center justify-center p-6 ${banner.bgColor}`}>
-                      <span className="text-2xl sm:text-4xl font-bold text-gray-800">{banner.content}</span>
-                    </CardContent>
+                    <div className="relative aspect-[2.5/1] w-full">
+                       <Image 
+                         src={banner.image_url} 
+                         alt={banner.title || "Offer"} 
+                         fill 
+                         className="object-cover"
+                         sizes="(max-width: 768px) 100vw, 80vw"
+                         priority={true}
+                       />
+                    </div>
                   </Card>
                 </CarouselItem>
               ))}
