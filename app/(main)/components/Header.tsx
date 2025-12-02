@@ -244,7 +244,8 @@ export default function Header({
       </div>
 
       {!isAdminPage && (
-        <div className="bg-white border-b shadow-sm py-2 px-3 sm:py-3 sm:px-4">
+        // CHANGED: Reduced vertical padding 'py-2' for both mobile and desktop
+        <div className="bg-white border-b shadow-sm py-2 px-3 sm:px-4">
           <div className="relative max-w-[1400px] mx-auto">
             <form onSubmit={handleSearch}>
               <Input
@@ -252,7 +253,9 @@ export default function Header({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search products..."
-                className="w-full pl-9 sm:pl-10 h-9 sm:h-11 text-sm rounded-lg border-gray-200 bg-gray-50 focus:bg-white transition-colors"
+                // CHANGED: 'h-9' (36px) for both mobile and desktop for a compact look
+                // Removed 'sm:h-11'
+                className="w-full pl-9 sm:pl-10 h-9 text-sm rounded-lg border-gray-200 bg-gray-50 focus:bg-white transition-colors"
               />
               <button type="submit" className="absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 p-1">
                 <Search className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />

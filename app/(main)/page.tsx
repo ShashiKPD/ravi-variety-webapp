@@ -9,7 +9,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import Image from "next/image";
@@ -17,8 +17,6 @@ import Image from "next/image";
 // Helper to fetch prices
 async function fetchPricesForProducts(products: ProductSummary[], supabase: any, userRole: string) {
   if (userRole === "anon" || products.length === 0) {
-    // If anon, we return null price_data. 
-    // The ProductCard component already handles this by showing "Log in to see price".
     return products.map(p => ({ ...p, price_data: null }));
   }
 
@@ -48,7 +46,6 @@ export default async function HomePage() {
       supabase.from("wishlist_items").select("product_id").eq("user_id", user.id),
     ]);
 
-    // Security Check
     if (profileRes.data && profileRes.data.is_active === false) {
       redirect("/auth/signout");
     }
@@ -60,11 +57,9 @@ export default async function HomePage() {
     showInteractiveButtons = ["retailer", "wholesaler", "admin"].includes(userRole);
   }
 
-  // Data Fetching
   const [featuredRes, popularRes, categoriesRes, bannersRes] = await Promise.all([
     supabase.rpc("get_homepage_featured").limit(8),
     supabase.rpc("get_popular_products", { limit_count: 12 }),
-    // UPDATED: Added image_url to selection
     supabase.from("categories").select("id, name, slug, image_url"),
     supabase.from("banners").select("*").order("created_at", { ascending: false })
   ]);
@@ -77,47 +72,48 @@ export default async function HomePage() {
   const categories = categoriesRes.data || [];
   const banners = bannersRes.data || [];
 
-  const heroBanners = [
-    { id: 1, content: "Bulk Savings on Spices", bgColor: "bg-orange-100" },
-    { id: 2, content: "New Arrivals: Pickles", bgColor: "bg-green-100" },
-  ];
-
   return (
     <div className="bg-gray-50 pb-8">
       
-      {/* Category Scroller (Always Visible) */}
+      {/* Category Scroller */}
       <CategoryScroller categories={categories} />
 
-      {/* Hero Carousel (Only Visible to Logged In Users) */}
+      {/* Hero Carousel (Full Width) */}
       {user && banners.length > 0 && (
-        <div className="p-4 pt-2">
+        // CHANGED: Removed padding div. Added w-full.
+        <div className="w-full group relative"> 
           <Carousel className="w-full" opts={{ loop: true }}>
-            <CarouselContent>
+            {/* CHANGED: -ml-0 removes the default left gap from shadcn carousel */}
+            <CarouselContent className="-ml-0">
               {banners.map((banner) => (
-                <CarouselItem key={banner.id}>
-                  <Card className="border-0 shadow-sm overflow-hidden">
-                    <div className="relative aspect-[2.5/1] w-full">
-                       <Image 
-                         src={banner.image_url} 
-                         alt={banner.title || "Offer"} 
-                         fill 
-                         className="object-cover"
-                         sizes="(max-width: 768px) 100vw, 80vw"
-                         priority={true}
-                       />
-                    </div>
+                // CHANGED: pl-0 removes padding between slides so they touch
+                <CarouselItem key={banner.id} className="pl-0">
+                  <Card className="border-0 shadow-none rounded-none overflow-hidden p-0">
+                     {/* CHANGED: Taller aspect ratios to prevent cropping */}
+                     <div className="relative aspect-[16/9] md:aspect-[2.5/1] w-full">
+                        <Image 
+                          src={banner.image_url} 
+                          alt={banner.title || "Offer"} 
+                          fill 
+                          className="object-cover"
+                          sizes="100vw"
+                          priority={true}
+                        />
+                     </div>
                   </Card>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="left-2 hidden sm:flex" />
-            <CarouselNext className="right-2 hidden sm:flex" />
+            {/* CHANGED: Positioned arrows absolutely inside the banner area */}
+            <CarouselPrevious className="left-4 hidden sm:flex bg-white/80 hover:bg-white border-none" />
+            <CarouselNext className="right-4 hidden sm:flex bg-white/80 hover:bg-white border-none" />
           </Carousel>
         </div>
       )}
 
       {/* Featured Section */}
-      <section className="p-4 pt-2">
+      {/* Added pt-6 to give breathing room after the massive banner */}
+      <section className="p-4 pt-6">
         <div className="flex justify-between items-center mb-4">
            <h2 className="text-xl font-bold text-gray-800">Featured Products</h2>
            <Link href="/search?filter=featured" className="text-sm text-blue-600 hover:underline">See all</Link>
