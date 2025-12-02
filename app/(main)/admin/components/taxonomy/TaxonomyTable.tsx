@@ -40,7 +40,7 @@ export default function TaxonomyTable({ data, type, onDelete, onUpdate }: Props)
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">Image</TableHead>
+            <TableHead className="w-20">Image</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Slug</TableHead>
             <TableHead className="text-right">Actions</TableHead>

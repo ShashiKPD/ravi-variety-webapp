@@ -48,7 +48,7 @@ export default async function CartPage() {
     .from("products")
     .select(`
       id, name, slug, sku, image_urls, stock_quantity, options,
-      product_groups ( name )
+      product_groups ( name ), unit_id, units(short_name)
     `)
     .in("id", productIds);
 
@@ -86,6 +86,7 @@ export default async function CartPage() {
     const productName = groupName || product?.name || "Unknown Item";
 
     const variantName = product?.options ? (product.options as any).size : null;
+    const unit = product?.units ? (product.units as any).short_name : "Pcs";
 
     return {
       id: item.id,
@@ -100,7 +101,8 @@ export default async function CartPage() {
       unitPrice,
       mrp,
       stock: product?.stock_quantity || 0,
-      itemTotal
+      itemTotal,
+      unit
     };
   });
 

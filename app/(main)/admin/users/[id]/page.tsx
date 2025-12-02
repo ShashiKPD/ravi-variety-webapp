@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,15 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           <Button variant="ghost" size="icon" asChild>
             <Link href="/admin/users"><ArrowLeft className="w-5 h-5" /></Link>
           </Button>
+
+          <div className="relative h-16 w-16 rounded-full overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+             {profile.avatar_url ? (
+               <Image src={profile.avatar_url} alt={profile.full_name} fill className="object-cover" />
+             ) : (
+               <div className="flex items-center justify-center h-full w-full text-gray-300"><User className="h-8 w-8" /></div>
+             )}
+          </div>
+          
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">{profile.full_name}</h1>

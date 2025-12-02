@@ -6,6 +6,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, AlertCircle } from "lucide-react";
+import BackButton from "@/app/(main)/components/BackButton";
 
 export default async function AdminOrdersPage() {
   const supabase = await createClient();
@@ -42,11 +43,14 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
-        <Badge variant="outline" className="px-3 py-1">
-          Total: {orders?.length || 0}
-        </Badge>
+      <div className="flex flex-col gap-1">
+        <BackButton href="/admin" label="Back to Dashboard" />
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-900">Order Management</h1>
+          <Badge variant="outline" className="px-3 py-1">
+            Total: {orders?.length || 0}
+          </Badge>
+        </div>
       </div>
 
       <div className="border rounded-lg bg-white shadow-sm overflow-hidden">

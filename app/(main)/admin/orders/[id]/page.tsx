@@ -86,6 +86,7 @@ export default async function AdminOrderDetails({ params }: { params: Promise<{ 
                         </TableCell>
                         <TableCell className="text-center font-bold">
                           {item.quantity}
+                          <span className="text-xs text-gray-500 font-normal">{item.unit_name}</span>
                         </TableCell>
                         <TableCell className="text-center">
                           <span className={isShortage ? "text-red-600 font-bold" : "text-gray-600"}>

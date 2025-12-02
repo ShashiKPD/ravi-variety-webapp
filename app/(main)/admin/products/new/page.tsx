@@ -4,24 +4,26 @@ import ProductStackForm from "../../components/ProductStackForm";
 export default async function NewProductPage() {
   const supabase = await createClient();
 
-  // Updated Query: select products(sku) to get related SKUs
-  const [catRes, brandRes, groupRes] = await Promise.all([
+  // 1. Fetch all necessary data (Added 'units' to the Promise.all)
+  const [catRes, brandRes, groupRes, unitRes] = await Promise.all([
     supabase.from("categories").select("id, name").order('name'),
     supabase.from("brands").select("id, name").order('name'),
     supabase.from("product_groups")
-      .select("id, name, brand_id, brands(name), products(sku)") // Fetch SKUs here
+      .select("id, name, brand_id, brands(name), products(sku)")
       .order('name'),
+    // NEW: Fetch Units
+    supabase.from("units").select("id, short_name").order('short_name')
   ]);
 
   const categories = catRes.data || [];
   const brands = brandRes.data || [];
-  
-  // Transform Data: Flatten SKUs into a single searchable string
+  const units = unitRes.data || []; // Prepare the data
+
+  // Format groups for the search dropdown
   const existingGroups = (groupRes.data || []).map((g: any) => ({
     id: g.id,
     name: g.name, 
     brandName: g.brands?.name,
-    // Create a string like "SKU-A, SKU-B" for easy searching
     skus: g.products?.map((p: any) => p.sku).join(", ") || "" 
   }));
 
@@ -32,6 +34,7 @@ export default async function NewProductPage() {
         categories={categories} 
         brands={brands} 
         existingGroups={existingGroups} 
+        units={units} // <--- Pass it to the form
       />
     </div>
   );

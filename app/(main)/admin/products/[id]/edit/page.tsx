@@ -53,7 +53,9 @@ export default async function QuickEditPage({ params }: { params: Promise<{ id: 
   
   const brandName = brand?.name || "Unknown Brand";
   const groupName = group?.name || "Unknown Group";
-
+  
+  const groupId = group?.id;
+  
   return (
     <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6 pb-20">
       
@@ -71,9 +73,16 @@ export default async function QuickEditPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
         
-        <Button variant="outline" size="sm" className="gap-2 text-gray-600" disabled title="Coming soon">
-          <ExternalLink className="w-4 h-4" />
-          Edit Full Family
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2 text-gray-600"
+          asChild // Use asChild to make it a link
+        >
+          <Link href={`/admin/products/family/${groupId}/edit`}>
+            <ExternalLink className="w-4 h-4" />
+            Edit Full Family
+          </Link>
         </Button>
       </div>
 

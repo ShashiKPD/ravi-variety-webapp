@@ -47,6 +47,7 @@ export async function createProductStack(formData: FormData) {
       price_wholesaler: meta.price_wholesaler,
       is_featured: meta.is_featured,
       options: meta.options,
+      unit_id: meta.unit_id,
       images: uploadedUrls
     });
   }

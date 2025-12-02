@@ -7,6 +7,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
 import { Edit, Plus, Search, AlertCircle } from "lucide-react";
+import BackButton from "@/app/(main)/components/BackButton";
 
 type SearchParams = Promise<{ q?: string }>;
 
@@ -49,16 +50,19 @@ export default async function ProductListPage(props: { searchParams: SearchParam
     <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Product Inventory</h1>
-          <p className="text-sm text-gray-500">Manage catalog, prices, and stock.</p>
+      <div className="flex flex-col gap-1">
+        <BackButton href="/admin" label="Back to Dashboard" />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Product Inventory</h1>
+            <p className="text-sm text-gray-500">Manage catalog, prices, and stock.</p>
+          </div>
+          <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Link href="/admin/products/new">
+              <Plus className="w-4 h-4 mr-2" /> Add New Product
+            </Link>
+          </Button>
         </div>
-        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
-          <Link href="/admin/products/new">
-            <Plus className="w-4 h-4 mr-2" /> Add New Product
-          </Link>
-        </Button>
       </div>
 
       {/* Search Bar */}

@@ -23,6 +23,7 @@ type B2BCartItem = {
   mrp: number;
   stock: number;
   itemTotal: number;
+  unitName?: string; // "Ctn", "Pcs", etc.
 };
 
 export default function CartItemList({ items }: { items: B2BCartItem[] }) {
@@ -147,6 +148,10 @@ export default function CartItemList({ items }: { items: B2BCartItem[] }) {
                     >
                       <Plus className="h-3 w-3" />
                     </Button>
+                    
+                    <span className="text-xs text-gray-500 font-medium ml-2 w-8">
+                      {item.unitName || "Pcs"}
+                    </span>
                   </div>
 
                   {/* Item Total & Remove */}

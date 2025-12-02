@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import Image from "next/image"; // Import Image
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Save, Trash2, AlertTriangle, Ban, CheckCircle, Info } from "lucide-react";
-import { updateUserProfile, deleteUser, toggleUserStatus } from "../../users/actions";
+import { Loader2, Save, Trash2, AlertTriangle, Ban, CheckCircle, Info, Camera, User } from "lucide-react";
+import { updateUserProfile, deleteUser, toggleUserStatus, adminUploadAvatar } from "../../users/actions";
 
 type ProfileData = {
   id: string;
@@ -22,13 +23,36 @@ type ProfileData = {
   latitude: number | null;
   longitude: number | null;
   is_active: boolean | null;
+  avatar_url: string | null; // Added avatar_url
 };
 
 export default function EditUserForm({ user, orderCount }: { user: ProfileData, orderCount: number }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // New state
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  // --- AVATAR HANDLER ---
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("target_user_id", user.id); // Send ID of user being edited
+    formData.append("avatar", e.target.files[0]);
+
+    const res = await adminUploadAvatar(formData);
+    setIsUploading(false);
+
+    if (res.error) {
+      alert(res.error);
+    } else {
+      router.refresh();
+    }
+  };
 
   const handleSubmit = async (formData: FormData) => {
     setIsLoading(true);
@@ -81,6 +105,62 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
 
   return (
     <div className="space-y-8">
+      
+      {/* --- AVATAR SECTION --- */}
+      <div className="flex items-center gap-6 pb-6 border-b border-gray-100">
+        <div 
+          className="relative group cursor-pointer" 
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-100 bg-gray-50 relative">
+            {user.avatar_url ? (
+              <Image 
+                src={user.avatar_url} 
+                alt="Profile" 
+                fill 
+                className="object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-300">
+                <User className="w-10 h-10" />
+              </div>
+            )}
+            
+            {/* Loading Overlay */}
+            {isUploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            )}
+            
+            {/* Hover Overlay */}
+            {!isUploading && (
+              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                <Camera className="w-6 h-6" />
+              </div>
+            )}
+          </div>
+          
+          {/* Edit Icon Badge */}
+          <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full border-2 border-white shadow-sm group-hover:bg-blue-700">
+            <Camera className="w-3 h-3" />
+          </div>
+          
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            className="hidden" 
+            accept="image/*" 
+            onChange={handleAvatarChange} 
+          />
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-medium text-gray-900">Profile Photo</h3>
+          <p className="text-sm text-gray-500">Click the image to upload a new photo.</p>
+        </div>
+      </div>
+
       <form action={handleSubmit} className="space-y-6">
         <input type="hidden" name="id" value={user.id} />
 
@@ -102,7 +182,6 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
           </div>
         </div>
 
-        {/* --- CREDENTIALS ROW (RESTORED) --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
           <div className="space-y-2">
             <Label htmlFor="phone" className="text-gray-600">Login ID (Phone)</Label>
@@ -112,7 +191,6 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
               disabled 
               className="bg-gray-100 text-gray-500 cursor-not-allowed" 
             />
-            <p className="text-[10px] text-gray-400">Login ID cannot be changed.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Set New Password</Label>
@@ -127,7 +205,6 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
           </div>
         </div>
 
-        {/* Contact */}
         <div className="space-y-2">
           <Label htmlFor="email">Email Address (Invoices)</Label>
           <Input 
@@ -181,10 +258,8 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
         </div>
       </form>
 
-      {/* --- DANGER ZONE --- */}
+      {/* Danger Zone */}
       <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 mt-12 space-y-4">
-        
-        {/* Disable Section */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
           <div>
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
@@ -205,7 +280,6 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
           </Button>
         </div>
 
-        {/* Delete Section with Safety Check */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-2">
           <div>
             <h3 className="text-sm font-bold text-red-900 flex items-center gap-2">
@@ -221,7 +295,6 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
               )}
             </div>
           </div>
-          
           <Button 
             type="button" 
             onClick={handleDelete}

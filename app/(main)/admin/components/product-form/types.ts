@@ -10,6 +10,7 @@ export type ProductInput = {
   price_wholesaler: string;
   size_option: string;
   is_featured: boolean;
+  unit_id: string;
   images: File[];
   previewUrls: string[];
 };

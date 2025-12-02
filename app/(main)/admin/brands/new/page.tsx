@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import TaxonomyForm from "../../components/taxonomy/TaxonomyForm";
 import TaxonomyTable from "../../components/taxonomy/TaxonomyTable";
 import { createBrand, updateBrand, deleteBrand } from "../actions";
+import BackButton from "@/app/(main)/components/BackButton";
 
 export default async function ManageBrandsPage() {
   const supabase = await createClient();
@@ -10,6 +11,7 @@ export default async function ManageBrandsPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 pb-20">
+      <BackButton href="/admin" label="Back to Dashboard" />
       
       {/* Create Section */}
       <Card>

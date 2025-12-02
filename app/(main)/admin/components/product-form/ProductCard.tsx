@@ -17,25 +17,30 @@ type Props = {
   index: number;
   totalCount: number;
   mode: 'new' | 'existing';
-  onUpdate: (id: number, field: keyof ProductInput, value: any) => void;
-  onToggleExpand: (id: number) => void;
+  allowDeleteLast?: boolean; // <--- NEW PROP
+  units: { id: number; short_name: string }[];
+  onUpdate: (id: number | string, field: keyof ProductInput, value: any) => void;
+  onToggleExpand: (id: number | string) => void;
   onDuplicate: (product: ProductInput) => void;
-  onRemove: (id: number) => void;
-  onImageUpdate: (id: number, images: File[], urls: string[]) => void;
+  onRemove: (id: number | string) => void;
+  onImageUpdate: (id: number | string, images: File[], urls: string[]) => void;
 };
 
 export default function ProductCard({ 
-  product, index, totalCount, mode, 
+  product, index, totalCount, mode, allowDeleteLast = false, units,
   onUpdate, onToggleExpand, onDuplicate, onRemove, onImageUpdate 
 }: Props) {
   
+  // Logic: Can delete if there's more than 1 OR if specific permission is given (Edit Mode)
+  const canDelete = totalCount > 1 || allowDeleteLast;
+
   return (
     <Card className={`transition-all duration-200 ${product.isExpanded ? 'ring-1 ring-blue-500/20 shadow-md' : 'opacity-90 hover:opacity-100'} border-l-4 border-l-blue-500 p-6`}>
       
       {/* HEADER */}
       <div className="flex items-center justify-between bg-gray-50/50 cursor-pointer hover:bg-gray-100/50 transition-colors" onClick={() => onToggleExpand(product.id)}>
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className={`shrink-0 flex items-center justify-center rounded-full text-xs font-bold w-6 h-6 ${index === 0 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'}`}>
+          <div className={`flex-shrink-0 flex items-center justify-center rounded-full text-xs font-bold w-6 h-6 ${index === 0 ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-700'}`}>
             {index === 0 ? <Box className="h-3 w-3" /> : `#${index}`}
           </div>
           <div className="min-w-0">
@@ -53,7 +58,14 @@ export default function ProductCard({
           <Button type="button" size="sm" variant="ghost" onClick={() => onDuplicate(product)} className="h-7 px-2 text-xs text-gray-600 hover:text-blue-600">
             <Copy className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Copy</span>
           </Button>
-          <Button type="button" size="icon" variant="ghost" onClick={() => onRemove(product.id)} disabled={totalCount === 1} className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50">
+          <Button 
+            type="button" 
+            size="icon" 
+            variant="ghost" 
+            onClick={() => onRemove(product.id)} 
+            disabled={!canDelete} // <--- UPDATED CHECK
+            className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
           <Button type="button" size="icon" variant="ghost" onClick={() => onToggleExpand(product.id)} className="h-7 w-7 text-gray-500">
@@ -90,7 +102,26 @@ export default function ProductCard({
               <div><Label className="text-[10px] text-slate-500 font-medium mb-1">Stock</Label><Input required type="number" value={product.stock} onChange={e => onUpdate(product.id, 'stock', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0" /></div>
               <div><Label className="text-[10px] text-slate-500 font-medium mb-1">Retailer ₹</Label><Input required type="number" value={product.price_retailer} onChange={e => onUpdate(product.id, 'price_retailer', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" /></div>
               <div><Label className="text-[10px] text-slate-500 font-medium mb-1">Wholesaler ₹</Label><Input required type="number" value={product.price_wholesaler} onChange={e => onUpdate(product.id, 'price_wholesaler', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" /></div>
-              <div className="col-span-2 lg:col-span-4 mt-1"><div className="w-full lg:w-1/4"><Label className="text-[10px] text-slate-500 font-medium mb-1">MRP (Display) ₹</Label><Input required type="number" value={product.mrp} onChange={e => onUpdate(product.id, 'mrp', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" /></div></div>
+              <div className="col-span-2 lg:col-span-4 mt-1 grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-[10px] text-slate-500 font-medium mb-1 block">MRP (Display) ₹</Label>
+                  <Input required type="number" value={product.mrp} onChange={e => onUpdate(product.id, 'mrp', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" />
+                </div>
+                
+                {/* --- NEW UNIT SELECTOR --- */}
+                <div>
+                  <Label className="text-[10px] text-slate-500 font-medium mb-1 block">Selling Unit</Label>
+                  <select 
+                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={product.unit_id}
+                    onChange={e => onUpdate(product.id, 'unit_id', e.target.value)}
+                  >
+                    <option value="">Select...</option>
+                    {units.map(u => <option key={u.id} value={u.id}>{u.short_name}</option>)}
+                  </select>
+                </div>
+                {/* ------------------------- */}
+              </div>
             </div>
           </div>
 

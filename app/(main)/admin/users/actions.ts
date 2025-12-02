@@ -182,3 +182,54 @@ export async function toggleUserStatus(userId: string, currentStatus: boolean) {
     return { error: error.message };
   }
 }
+
+export async function adminUploadAvatar(formData: FormData) {
+  const supabase = await createServerClient();
+  
+  // 1. Auth Check (Caller must be Admin)
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { data: adminProfile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (adminProfile?.role !== 'admin') {
+    return { error: "Unauthorized" };
+  }
+
+  // 2. Extract Data
+  const targetUserId = formData.get("target_user_id") as string;
+  const file = formData.get("avatar") as File;
+  
+  if (!file || file.size === 0) return { error: "No file provided" };
+
+  // 3. Upload to Storage
+  // We overwrite the previous file or create a new one with a timestamp
+  const fileExt = file.name.split(".").pop();
+  const filePath = `${targetUserId}/${Date.now()}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("avatars")
+    .upload(filePath, file);
+
+  if (uploadError) return { error: uploadError.message };
+
+  // 4. Get Public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from("avatars")
+    .getPublicUrl(filePath);
+
+  // 5. Update Profile
+  const { error: dbError } = await supabase
+    .from("profiles")
+    .update({ avatar_url: publicUrl })
+    .eq("id", targetUserId);
+
+  if (dbError) return { error: dbError.message };
+
+  revalidatePath(`/admin/users/${targetUserId}`);
+  return { success: "Avatar updated", url: publicUrl };
+}
