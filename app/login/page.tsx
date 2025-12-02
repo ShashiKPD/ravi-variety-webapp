@@ -2,14 +2,14 @@
 
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
 
-// 1. Move the logic into a sub-component
 function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -18,7 +18,6 @@ function LoginForm() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  // Initialize error from URL if present (e.g. ?error=Your account is disabled)
   const [error, setError] = useState<string | null>(searchParams.get("error"));
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -58,9 +57,9 @@ function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-sm shadow-lg">
+    <Card className="w-full max-w-sm shadow-lg border-0 sm:border">
       <CardHeader className="text-center space-y-1">
-        <CardTitle className="text-2xl font-bold text-blue-900">Ravi Variety B2B</CardTitle>
+        <CardTitle className="text-2xl font-bold text-blue-900">Ravi Variety</CardTitle>
         <CardDescription>Enter your mobile number to access your account</CardDescription>
       </CardHeader>
       <CardContent>
@@ -81,7 +80,8 @@ function LoginForm() {
                   if (val.length <= 10) setPhone(val);
                 }}
                 required
-                className="border-none shadow-none focus-visible:ring-0 rounded-none h-10 tracking-widest text-lg"
+                // Lighter placeholder text
+                className="border-none shadow-none focus-visible:ring-0 rounded-none h-10 tracking-widest text-lg placeholder:text-gray-300"
               />
             </div>
           </div>
@@ -108,15 +108,32 @@ function LoginForm() {
             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Login"}
           </Button>
         </form>
+
+        <div className="mt-6 text-center">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
+
+          <Button variant="ghost" asChild className="mt-4 w-full text-gray-600 hover:text-blue-600 hover:bg-blue-50">
+            <Link href="/">
+              Skip login & browse store <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-// 2. Export the page wrapped in Suspense
 export default function LoginPage() {
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+    // min-h-[100dvh] handles mobile browser UI better than min-h-screen
+    <div className="flex items-center justify-center min-h-[100dvh] bg-gray-50 px-4">
       <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-blue-600" />}>
         <LoginForm />
       </Suspense>
