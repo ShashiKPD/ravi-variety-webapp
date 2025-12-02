@@ -114,35 +114,21 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
         >
           <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-100 bg-gray-50 relative">
             {user.avatar_url ? (
-              <Image 
-                src={user.avatar_url} 
-                alt="Profile" 
-                fill 
-                className="object-cover"
-              />
+              <Image src={user.avatar_url} alt="Profile" fill className="object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                <User className="w-10 h-10" />
-              </div>
+              <div className="w-full h-full flex items-center justify-center text-gray-300"><User className="w-10 h-10" /></div>
             )}
             
             {/* Loading Overlay */}
             {isUploading && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white">
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white z-20">
                 <Loader2 className="w-6 h-6 animate-spin" />
-              </div>
-            )}
-            
-            {/* Hover Overlay */}
-            {!isUploading && (
-              <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
-                <Camera className="w-6 h-6" />
               </div>
             )}
           </div>
           
-          {/* Edit Icon Badge */}
-          <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full border-2 border-white shadow-sm group-hover:bg-blue-700">
+          {/* Permanent Edit Badge - Always Visible */}
+          <div className="absolute bottom-0 right-0 bg-blue-600 text-white p-1.5 rounded-full border-2 border-white shadow-sm z-10">
             <Camera className="w-3 h-3" />
           </div>
           
@@ -157,7 +143,7 @@ export default function EditUserForm({ user, orderCount }: { user: ProfileData, 
         
         <div>
           <h3 className="text-lg font-medium text-gray-900">Profile Photo</h3>
-          <p className="text-sm text-gray-500">Click the image to upload a new photo.</p>
+          <p className="text-sm text-gray-500">Tap image to upload.</p>
         </div>
       </div>
 

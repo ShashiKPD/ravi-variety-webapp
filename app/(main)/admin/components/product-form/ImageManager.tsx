@@ -36,12 +36,11 @@ export default function ImageManager({ images, previewUrls, onAddImages, onRemov
 
   return (
     <div className="lg:col-span-2">
-      <Label className="mb-1.5 block text-xs font-medium text-gray-700">Product Images (Drag to Reorder)</Label>
+      <Label className="mb-2 block text-xs font-medium text-gray-700">Product Images (Drag to Reorder)</Label>
       
       <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 min-h-[140px]">
         <div className="flex flex-wrap gap-3">
           
-          {/* Image Grid Items */}
           {previewUrls.map((url, idx) => (
             <div 
               key={idx}
@@ -50,30 +49,31 @@ export default function ImageManager({ images, previewUrls, onAddImages, onRemov
               onDragEnter={() => dragOverItem.current = idx}
               onDragEnd={handleDragSort}
               onDragOver={(e) => e.preventDefault()}
-              className="relative w-24 h-24 group bg-white rounded-md shadow-sm border border-gray-200 cursor-move"
+              className="relative w-24 h-24 group bg-white rounded-md shadow-sm border border-gray-200 cursor-move shrink-0"
             >
               <img src={url} alt="Product" className="w-full h-full object-cover rounded-md" />
               
-              {/* Number Badge */}
-              <div className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm z-10">
+              {/* Number Badge (Top Left) */}
+              <div className="absolute top-1 left-1 bg-blue-600/90 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm z-10 backdrop-blur-sm">
                 {idx + 1}
               </div>
 
-              {/* Overlay Actions */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-md">
-                 <button 
-                   type="button" 
-                   onClick={() => onRemoveImage(idx)}
-                   className="bg-white/90 hover:bg-red-500 hover:text-white text-red-600 p-1.5 rounded-full transition-colors"
-                 >
-                   <X className="w-4 h-4" />
-                 </button>
-              </div>
+              {/* Delete Button (Top Right) - FIXED: Always Visible & Accessible */}
+              <button 
+                type="button" 
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent drag/click conflict
+                  onRemoveImage(idx);
+                }}
+                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 focus:outline-none z-20 active:scale-95"
+                title="Remove Image"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           ))}
 
-          {/* Add Button */}
-          <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 bg-white border border-dashed border-gray-300 rounded-md hover:border-blue-500 hover:bg-blue-50 transition-all">
+          <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 bg-white border-2 border-dashed border-gray-300 rounded-md hover:border-blue-500 hover:bg-blue-50 transition-all active:bg-blue-100">
             <input 
               type="file" 
               multiple 

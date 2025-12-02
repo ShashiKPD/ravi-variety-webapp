@@ -1,9 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import AddBannerForm from "../components/AddBannerForm"; // We will create this
+import AddBannerForm from "../components/AddBannerForm";
 import BackButton from "@/app/(main)/components/BackButton";
 import Image from "next/image";
-import DeleteBannerButton from "../components/DeleteBannerButton"; // And this
+import DeleteBannerButton from "../components/DeleteBannerButton";
 
 export default async function BannersPage() {
   const supabase = await createClient();
@@ -19,25 +19,25 @@ export default async function BannersPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           
-          {/* Upload Form */}
           <AddBannerForm />
 
-          {/* List */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t">
             {banners && banners.length > 0 ? (
               banners.map((banner) => (
-                <div key={banner.id} className="relative group border rounded-lg overflow-hidden aspect-[2.5/1]">
+                <div key={banner.id} className="relative group border rounded-lg overflow-hidden aspect-[2.5/1] shadow-sm">
                   <Image 
                     src={banner.image_url} 
                     alt="Banner" 
                     fill 
                     className="object-cover"
                   />
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* FIXED: Button is always visible (removed opacity/hover classes) */}
+                  <div className="absolute top-2 right-2 z-10">
                     <DeleteBannerButton id={banner.id} />
                   </div>
+                  
                   {banner.title && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2 truncate">
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2 truncate backdrop-blur-sm">
                       {banner.title}
                     </div>
                   )}
