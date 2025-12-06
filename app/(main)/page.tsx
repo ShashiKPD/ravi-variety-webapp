@@ -1,18 +1,10 @@
 import { createClient } from "@/utils/supabase/server";
 import ProductCard from "./components/ProductCard";
 import CategoryScroller from "./components/CategoryScroller";
+import HeroCarousel from "./components/HeroCarousel";
 import { ProductSummary, ProductPrice } from "@/lib/types";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import Image from "next/image";
 
 // Helper to fetch prices
 async function fetchPricesForProducts(products: ProductSummary[], supabase: any, userRole: string) {
@@ -78,41 +70,12 @@ export default async function HomePage() {
       {/* Category Scroller */}
       <CategoryScroller categories={categories} />
 
-      {/* Hero Carousel (Full Width) */}
+      {/* Hero Carousel (Full Width, No Padding) */}
       {user && banners.length > 0 && (
-        // CHANGED: Removed padding div. Added w-full.
-        <div className="w-full group relative"> 
-          <Carousel className="w-full" opts={{ loop: true }}>
-            {/* CHANGED: -ml-0 removes the default left gap from shadcn carousel */}
-            <CarouselContent className="-ml-0">
-              {banners.map((banner) => (
-                // CHANGED: pl-0 removes padding between slides so they touch
-                <CarouselItem key={banner.id} className="pl-0">
-                  <Card className="border-0 shadow-none rounded-none overflow-hidden p-0">
-                     {/* CHANGED: Taller aspect ratios to prevent cropping */}
-                     <div className="relative aspect-[16/9] md:aspect-[2.5/1] w-full">
-                        <Image 
-                          src={banner.image_url} 
-                          alt={banner.title || "Offer"} 
-                          fill 
-                          className="object-cover"
-                          sizes="100vw"
-                          priority={true}
-                        />
-                     </div>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            {/* CHANGED: Positioned arrows absolutely inside the banner area */}
-            <CarouselPrevious className="left-4 hidden sm:flex bg-white/80 hover:bg-white border-none" />
-            <CarouselNext className="right-4 hidden sm:flex bg-white/80 hover:bg-white border-none" />
-          </Carousel>
-        </div>
+        <HeroCarousel banners={banners} />
       )}
 
       {/* Featured Section */}
-      {/* Added pt-6 to give breathing room after the massive banner */}
       <section className="p-4 pt-6">
         <div className="flex justify-between items-center mb-4">
            <h2 className="text-xl font-bold text-gray-800">Featured Products</h2>
