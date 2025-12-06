@@ -14,7 +14,7 @@ type Props = {
   categories: { id: number; name: string }[];
   brands: { id: number; name: string }[];
   existingGroups: ExistingGroup[];
-  units: { id: number; short_name: string }[]; // <--- NEW PROP
+  units: { id: number; name: string; short_name: string }[]; // <--- NEW PROP
   initialData?: {
     groupId: number;
     brandId: number;
