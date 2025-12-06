@@ -30,6 +30,7 @@ export async function createCategory(formData: FormData) {
   // Data Extraction
   const name = formData.get("name") as string;
   const imageFile = formData.get("image") as File;
+  const supercategoryIdRaw = formData.get("supercategory_id") as string;
 
   if (!name) return { error: "Name is required" };
 
@@ -39,10 +40,14 @@ export async function createCategory(formData: FormData) {
     imageUrl = await uploadImage(imageFile, path);
   }
 
+  // Handle optional supercategory
+  const supercategory_id = supercategoryIdRaw ? Number(supercategoryIdRaw) : null;
+
   const { error } = await supabase.from("categories").insert({
     name,
     slug: generateSlug(name),
-    image_url: imageUrl
+    image_url: imageUrl,
+    supercategory_id: supercategory_id // <--- NEW FIELD
   });
 
   if (error) {
@@ -65,8 +70,15 @@ export async function updateCategory(formData: FormData) {
   const id = formData.get("id") as string;
   const name = formData.get("name") as string;
   const imageFile = formData.get("image") as File;
+  const supercategoryIdRaw = formData.get("supercategory_id") as string;
 
-  const updates: any = { name, slug: generateSlug(name) };
+  const supercategory_id = supercategoryIdRaw ? Number(supercategoryIdRaw) : null;
+
+  const updates: any = { 
+    name, 
+    slug: generateSlug(name),
+    supercategory_id: supercategory_id // <--- NEW FIELD
+  };
 
   if (imageFile && imageFile.size > 0) {
     const path = `categories/${Date.now()}-${imageFile.name}`;
@@ -89,7 +101,7 @@ export async function deleteCategory(id: number) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  // 1. Check if Category is in use
+  // 1. Check if Category is in use (by Product Groups)
   const { count, error: countError } = await supabase
     .from("product_groups")
     .select("id", { count: "exact", head: true })

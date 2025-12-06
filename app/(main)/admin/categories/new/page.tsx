@@ -8,11 +8,14 @@ import BackButton from "@/app/(main)/components/BackButton";
 export default async function ManageCategoriesPage() {
   const supabase = await createClient();
   
-  // Fetch existing categories with images
-  const { data: categories } = await supabase
-    .from("categories")
-    .select("*")
-    .order("name");
+  // 1. Fetch Categories AND Supercategories
+  const [categoriesRes, supercatsRes] = await Promise.all([
+    supabase.from("categories").select("*").order("name"),
+    supabase.from("supercategories").select("id, name").order("name")
+  ]);
+
+  const categories = categoriesRes.data || [];
+  const supercategories = supercatsRes.data || [];
 
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 pb-20">
@@ -22,11 +25,14 @@ export default async function ManageCategoriesPage() {
       <Card>
         <CardHeader>
           <CardTitle>Manage Categories</CardTitle>
-          <CardDescription>Add new categories with images to organize your catalog.</CardDescription>
+          <CardDescription>Add new categories and link them to supercategories (optional).</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Reusing Shared Component */}
-          <TaxonomyForm type="Category" onSubmit={createCategory} />
+          <TaxonomyForm 
+            type="Category" 
+            onSubmit={createCategory}
+            parents={supercategories} // <--- Pass supercategories here
+          />
         </CardContent>
       </Card>
 
@@ -36,9 +42,8 @@ export default async function ManageCategoriesPage() {
           <CardTitle>Existing Categories</CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Reusing Shared Table */}
           <TaxonomyTable 
-            data={categories || []} 
+            data={categories} 
             type="Category" 
             onDelete={deleteCategory}
             onUpdate={updateCategory}

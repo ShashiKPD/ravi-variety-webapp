@@ -2,11 +2,20 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { 
-  Card, CardContent, CardDescription, CardHeader, CardTitle 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  ShoppingBag, Package, Tags, Users, AlertCircle, Image as ImageIcon, Scale
+  ShoppingBag, 
+  Package, 
+  Tags, 
+  Users, 
+  AlertCircle,
+  Scale
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -32,7 +41,6 @@ export default async function AdminDashboard() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        {/* 1. ORDERS */}
         <Card className="border-l-4 border-l-blue-600 shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
@@ -46,7 +54,6 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* 2. INVENTORY */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex justify-between items-start">
@@ -61,7 +68,6 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* 3. USERS */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg"><Users className="w-5 h-5 text-gray-600" />Users</CardTitle>
@@ -73,19 +79,20 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* 4. CLASSIFICATIONS */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg"><Tags className="w-5 h-5 text-gray-600" />Classifications</CardTitle>
-            <CardDescription>Organize categories and brands.</CardDescription>
+            <CardDescription>Organize your catalog structure.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
-            <Button asChild variant="outline" className="w-full"><Link href="/admin/categories/new">Categories</Link></Button>
-            <Button asChild variant="outline" className="w-full"><Link href="/admin/brands/new">Brands</Link></Button>
+          <CardContent className="flex flex-col gap-2">
+            <div className="grid grid-cols-2 gap-2">
+               <Button asChild variant="outline" className="w-full"><Link href="/admin/categories/new">Categories</Link></Button>
+               <Button asChild variant="outline" className="w-full"><Link href="/admin/brands/new">Brands</Link></Button>
+            </div>
+            <Button asChild variant="secondary" className="w-full"><Link href="/admin/supercategories/new">Supercategories</Link></Button>
           </CardContent>
         </Card>
 
-        {/* 5. CONFIGURATIONS (New) */}
         <Card className="shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg"><Scale className="w-5 h-5 text-gray-600" />Settings</CardTitle>

@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Box, Copy, Trash2, ChevronUp, ChevronDown, Star } from "lucide-react";
 import { ProductInput } from "./types";
 import ImageManager from "./ImageManager";
@@ -17,8 +24,9 @@ type Props = {
   index: number;
   totalCount: number;
   mode: 'new' | 'existing';
-  allowDeleteLast?: boolean; // <--- NEW PROP
-  units: { id: number; short_name: string }[];
+  allowDeleteLast?: boolean;
+  // UPDATED: Accept name and short_name
+  units: { id: number; name: string; short_name: string }[]; 
   onUpdate: (id: number | string, field: keyof ProductInput, value: any) => void;
   onToggleExpand: (id: number | string) => void;
   onDuplicate: (product: ProductInput) => void;
@@ -31,7 +39,6 @@ export default function ProductCard({
   onUpdate, onToggleExpand, onDuplicate, onRemove, onImageUpdate 
 }: Props) {
   
-  // Logic: Can delete if there's more than 1 OR if specific permission is given (Edit Mode)
   const canDelete = totalCount > 1 || allowDeleteLast;
 
   return (
@@ -54,18 +61,11 @@ export default function ProductCard({
           </div>
         </div>
         
-        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
           <Button type="button" size="sm" variant="ghost" onClick={() => onDuplicate(product)} className="h-7 px-2 text-xs text-gray-600 hover:text-blue-600">
             <Copy className="h-3.5 w-3.5 sm:mr-1" /> <span className="hidden sm:inline">Copy</span>
           </Button>
-          <Button 
-            type="button" 
-            size="icon" 
-            variant="ghost" 
-            onClick={() => onRemove(product.id)} 
-            disabled={!canDelete} // <--- UPDATED CHECK
-            className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50"
-          >
+          <Button type="button" size="icon" variant="ghost" onClick={() => onRemove(product.id)} disabled={!canDelete} className="h-7 w-7 text-gray-400 hover:text-red-500 hover:bg-red-50">
             <Trash2 className="h-4 w-4" />
           </Button>
           <Button type="button" size="icon" variant="ghost" onClick={() => onToggleExpand(product.id)} className="h-7 w-7 text-gray-500">
@@ -102,25 +102,33 @@ export default function ProductCard({
               <div><Label className="text-[10px] text-slate-500 font-medium mb-1">Stock</Label><Input required type="number" value={product.stock} onChange={e => onUpdate(product.id, 'stock', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0" /></div>
               <div><Label className="text-[10px] text-slate-500 font-medium mb-1">Retailer ₹</Label><Input required type="number" value={product.price_retailer} onChange={e => onUpdate(product.id, 'price_retailer', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" /></div>
               <div><Label className="text-[10px] text-slate-500 font-medium mb-1">Wholesaler ₹</Label><Input required type="number" value={product.price_wholesaler} onChange={e => onUpdate(product.id, 'price_wholesaler', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" /></div>
+              
               <div className="col-span-2 lg:col-span-4 mt-1 grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-[10px] text-slate-500 font-medium mb-1 block">MRP (Display) ₹</Label>
-                  <Input required type="number" value={product.mrp} onChange={e => onUpdate(product.id, 'mrp', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" />
-                </div>
-                
-                {/* --- NEW UNIT SELECTOR --- */}
-                <div>
-                  <Label className="text-[10px] text-slate-500 font-medium mb-1 block">Selling Unit</Label>
-                  <select 
-                    className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    value={product.unit_id}
-                    onChange={e => onUpdate(product.id, 'unit_id', e.target.value)}
-                  >
-                    <option value="">Select...</option>
-                    {units.map(u => <option key={u.id} value={u.id}>{u.short_name}</option>)}
-                  </select>
-                </div>
-                {/* ------------------------- */}
+                  <div>
+                    <Label className="text-[10px] text-slate-500 font-medium mb-1 block">MRP (Display) ₹</Label>
+                    <Input required type="number" value={product.mrp} onChange={e => onUpdate(product.id, 'mrp', e.target.value)} className="bg-white h-8 text-sm px-2" placeholder="0.00" />
+                  </div>
+                  
+                  {/* --- UPDATED UNIT SELECTOR --- */}
+                  <div>
+                    <Label className="text-[10px] text-slate-500 font-medium mb-1 block">Selling Unit</Label>
+                    <Select 
+                      value={product.unit_id || ""} 
+                      onValueChange={(val) => onUpdate(product.id, 'unit_id', val)}
+                    >
+                      <SelectTrigger className="h-8 w-full text-sm bg-white shadow-sm">
+                        <SelectValue placeholder="Select Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>
+                            {u.name} ({u.short_name})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {/* ----------------------------- */}
               </div>
             </div>
           </div>

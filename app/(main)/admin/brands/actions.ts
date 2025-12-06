@@ -91,3 +91,54 @@ export async function deleteBrand(id: number) {
   revalidatePath("/admin/brands/new");
   return { success: "Brand deleted" };
 }
+
+// 1. Toggle Brand Restriction (Open vs Private)
+export async function toggleBrandRestriction(brandId: number, isRestricted: boolean) {
+  const supabase = await createClient();
+  
+  // Auth Check
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== 'admin') return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("brands")
+    .update({ is_restricted: isRestricted })
+    .eq("id", brandId);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin/brands/new");
+  return { success: "Brand updated" };
+}
+
+// 2. Toggle User Access (Grant/Revoke)
+export async function toggleUserBrandAccess(brandId: number, userId: string, grantAccess: boolean) {
+  const supabase = await createClient();
+  
+  // Auth Check... (Same as above)
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+  if (profile?.role !== 'admin') return { error: "Unauthorized" };
+
+  if (grantAccess) {
+    const { error } = await supabase
+      .from("brand_access_permissions")
+      .insert({ brand_id: brandId, user_id: userId });
+    
+    // Ignore duplicate error (already has access)
+    if (error && error.code !== '23505') return { error: error.message };
+  } else {
+    const { error } = await supabase
+      .from("brand_access_permissions")
+      .delete()
+      .match({ brand_id: brandId, user_id: userId });
+      
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath(`/admin/brands/${brandId}/access`);
+  return { success: "Access updated" };
+}

@@ -35,6 +35,7 @@ export default function ProductInfo({
 
   const currentMrp = priceData && priceData.mrp ? priceData.mrp : 0;
   const isAnonymous = userRole === "anon";
+  const hasAccess = !!priceData;
 
   // 1. FORCE SCROLL TO TOP
   // This ensures that whenever a new variant loads, the page jumps to the top
@@ -98,7 +99,7 @@ export default function ProductInfo({
       <Separator className="mb-6" />
 
       {/* PRICE DISPLAY (Only for Logged In) */}
-      {!isAnonymous && priceData && (
+      {!isAnonymous && hasAccess && (
         <div className="mb-6">
           <div>
             <div className="flex items-baseline gap-3 mb-1">
@@ -166,7 +167,7 @@ export default function ProductInfo({
       )}
 
       {/* ACTION BAR (Only for Logged In) */}
-      {!isAnonymous && (
+      {!isAnonymous && hasAccess && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 lg:static lg:border-none lg:shadow-none lg:p-0 lg:mb-8">
           <div className="flex gap-4 max-w-7xl mx-auto lg:mx-0">
              <div className="w-24 shrink-0">

@@ -2,11 +2,12 @@ import { createClient } from "@/utils/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import TaxonomyForm from "../../components/taxonomy/TaxonomyForm";
 import TaxonomyTable from "../../components/taxonomy/TaxonomyTable";
-import { createBrand, updateBrand, deleteBrand } from "../actions";
+import { createBrand, updateBrand, deleteBrand, toggleBrandRestriction } from "../actions"; // Import toggle
 import BackButton from "@/app/(main)/components/BackButton";
 
 export default async function ManageBrandsPage() {
   const supabase = await createClient();
+  // Fetch is_restricted
   const { data: brands } = await supabase.from("brands").select("*").order("name");
 
   return (
@@ -17,7 +18,7 @@ export default async function ManageBrandsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Manage Brands</CardTitle>
-          <CardDescription>Add new brands with logos.</CardDescription>
+          <CardDescription>Add new brands. Toggle 'Restricted' to limit access.</CardDescription>
         </CardHeader>
         <CardContent>
           <TaxonomyForm type="Brand" onSubmit={createBrand} />
@@ -35,6 +36,7 @@ export default async function ManageBrandsPage() {
             type="Brand" 
             onDelete={deleteBrand}
             onUpdate={updateBrand}
+            onToggleRestriction={toggleBrandRestriction} // Pass it here
           />
         </CardContent>
       </Card>

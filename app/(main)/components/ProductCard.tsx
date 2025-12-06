@@ -16,9 +16,10 @@ export default function ProductCard({
 }) {
   // Default: Render nothing (Oblivious Catalog Mode)
   let priceDisplay = null;
+  const hasPriceAccess = !!product.price_data;
 
   // Only render price if data exists (Logged in users)
-  if (product.price_data) {
+  if (hasPriceAccess && product.price_data) {
     const { unit_price, sale_price, mrp } = product.price_data;
     const activePrice = sale_price && sale_price > 0 ? sale_price : unit_price;
 
@@ -38,6 +39,7 @@ export default function ProductCard({
       </div>
     );
   }
+  const canPurchase = showInteractiveButtons && hasPriceAccess;
 
   return (
     <Card className="w-full relative overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow gap-0 py-0 group">
@@ -75,10 +77,10 @@ export default function ProductCard({
       </CardHeader>
 
       {/* Only render content padding if there is something to show */}
-      {(priceDisplay || showInteractiveButtons) ? (
+      {(priceDisplay || canPurchase) ? (
         <CardContent className="p-3 pt-2 mt-auto">
           <div className="mb-3 min-h-[1.5rem]">{priceDisplay}</div>
-          {showInteractiveButtons && (
+          {canPurchase && (
             <AddToCartButton productId={product.variant_id} />
           )}
         </CardContent>
