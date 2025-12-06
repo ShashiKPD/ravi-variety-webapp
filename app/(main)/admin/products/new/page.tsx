@@ -11,7 +11,7 @@ export default async function NewProductPage() {
     supabase.from("product_groups")
       .select("id, name, brand_id, brands(name), products(sku)")
       .order('name'),
-    supabase.from("units").select("id, short_name").order('short_name')
+    supabase.from("units").select("id, name, short_name").order('name')
   ]);
 
   const categories = catRes.data || [];

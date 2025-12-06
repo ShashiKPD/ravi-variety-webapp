@@ -44,7 +44,7 @@ export default async function EditFamilyPage({ params }: { params: Promise<{ id:
     supabase.from("categories").select("id, name").order('name'),
     supabase.from("brands").select("id, name").order('name'),
     // Added Unit Fetch
-    supabase.from("units").select("id, short_name").order('short_name') 
+    supabase.from("units").select("id, name, short_name").order('name') 
   ]);
 
   return (
