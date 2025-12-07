@@ -182,7 +182,7 @@ export default function ProductInfo({
              <div className="flex-1 min-w-0">
                 <AddToCartButton 
                   productId={currentVariant.id} 
-                  quantity={quantity}
+                  initialQty={quantity}
                   className="h-11 text-base font-medium w-full"
                 />
              </div>

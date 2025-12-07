@@ -8,10 +8,16 @@ import BackButton from "@/app/(main)/components/BackButton";
 export default async function ManageCategoriesPage() {
   const supabase = await createClient();
   
-  // 1. Fetch Categories AND Supercategories
+  // 1. Fetch Categories WITH Supercategory Name
   const [categoriesRes, supercatsRes] = await Promise.all([
-    supabase.from("categories").select("*").order("name"),
-    supabase.from("supercategories").select("id, name").order("name")
+    supabase
+      .from("categories")
+      .select("*, supercategories(id, name)") // Fetch parent details
+      .order("name"),
+    supabase
+      .from("supercategories")
+      .select("id, name")
+      .order("name")
   ]);
 
   const categories = categoriesRes.data || [];
@@ -31,7 +37,7 @@ export default async function ManageCategoriesPage() {
           <TaxonomyForm 
             type="Category" 
             onSubmit={createCategory}
-            parents={supercategories} // <--- Pass supercategories here
+            parents={supercategories} 
           />
         </CardContent>
       </Card>
@@ -45,6 +51,7 @@ export default async function ManageCategoriesPage() {
           <TaxonomyTable 
             data={categories} 
             type="Category" 
+            parents={supercategories} // <--- Pass parents for Editing
             onDelete={deleteCategory}
             onUpdate={updateCategory}
           />

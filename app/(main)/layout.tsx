@@ -1,63 +1,47 @@
-import { createClient } from "@/utils/supabase/server";
 import Header from "./components/Header";
-import { redirect } from "next/navigation"; // Import redirect
+import MobileBottomNav from "./components/MobileBottomNav"; // Import
+import { createClient } from "@/utils/supabase/server";
 
 export default async function MainLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  
+  // Fetch cart count for the badges
+  const { data: { user } } = await supabase.auth.getUser();
   let cartCount = 0;
-  let userProfile: { role: string | null; full_name: string | null; avatar_url: string | null; is_active: boolean | null } = {
-    role: null,
-    full_name: "Guest",
-    avatar_url: null,
-    is_active: true, // Default to true for guests
-  };
+  let userRole = "anon";
 
   if (user) {
     const [cartRes, profileRes] = await Promise.all([
-      supabase
-        .from("cart_items")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id),
-      supabase
-        .from("profiles")
-        .select("role, full_name, avatar_url, is_active") // Fetch is_active
-        .eq("id", user.id)
-        .single(),
+      supabase.from("cart_items").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+      supabase.from("profiles").select("role").eq("id", user.id).single()
     ]);
-
-    cartCount = cartRes.count ?? 0;
-    if (profileRes.data) {
-      userProfile = profileRes.data;
-    }
-
-    // --- SECURITY CHECK ---
-    // If the account exists but is marked disabled, force logout immediately.
-    if (userProfile.is_active === false) {
-      redirect("/auth/signout");
-    }
+    cartCount = cartRes.count || 0;
+    userRole = profileRes.data?.role || "anon";
   }
 
   return (
-    <>
-      <Header
-        isLoggedIn={!!user}
-        userRole={userProfile.role}
-        userName={userProfile.full_name}
-        userAvatar={userProfile.avatar_url}
-        cartCount={cartCount}
-      />
+    <div className="min-h-screen flex flex-col bg-gray-50">
       
-      <main className="bg-gray-100 min-h-screen">
+      {/* 1. Sticky Header */}
+      <Header userRole={userRole} cartCount={cartCount} />
+
+      {/* 2. Main Content (Added padding-bottom for mobile nav) */}
+      <main className="flex-1 pb-16 md:pb-0">
         {children}
       </main>
-    </>
+
+      {/* 3. Footer (Optional: You can hide footer on mobile if it's too much clutter) */}
+      <footer className="bg-white border-t py-8 text-center text-sm text-gray-500 hidden md:block">
+        <p>© 2025 Ravi Variety. All rights reserved.</p>
+      </footer>
+
+      {/* 4. Mobile Bottom Nav (Fixed) */}
+      <MobileBottomNav cartCount={cartCount} />
+      
+    </div>
   );
 }

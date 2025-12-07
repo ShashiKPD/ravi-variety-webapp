@@ -11,7 +11,6 @@ type ProductGridProps = {
   limit?: number;
   showInteractiveButtons: boolean;
   wishlistVariantIds: Set<number>;
-  // We need these to build the pagination links correctly
   currentParams: { [key: string]: string | string[] | undefined };
   clearFiltersHref: string;
 };
@@ -29,7 +28,6 @@ export default function ProductGrid({
   
   const totalPages = Math.ceil(Number(totalCount) / limit);
 
-  // 1. Empty State
   if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-lg border border-dashed border-gray-200">
@@ -42,11 +40,16 @@ export default function ProductGrid({
     );
   }
 
-  // 2. The Grid
   return (
-    <div className="flex flex-col gap-12">
-      {/* Product Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+    <div className="flex flex-col gap-8">
+      
+      {/* GRID LAYOUT:
+        - Mobile: grid-cols-2 (Side by side vertical cards)
+        - Tablet: grid-cols-3
+        - Desktop: grid-cols-4 
+        - Gap: gap-[2px] (Negligible spacing)
+      */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[2px]">
         {products.map((product) => (
           <ProductCard
             key={product.variant_id}
@@ -57,9 +60,9 @@ export default function ProductGrid({
         ))}
       </div>
 
-      {/* 3. Pagination */}
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4">
+        <div className="flex justify-center items-center gap-4 mt-4">
           <Button 
             variant="outline" 
             size="sm" 
