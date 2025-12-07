@@ -21,7 +21,7 @@ type Banner = {
 export default function HeroCarousel({ banners }: { banners: Banner[] }) {
   // Initialize Autoplay plugin (4 seconds delay)
   const plugin = useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: false })
+    Autoplay({ delay: 1000, stopOnInteraction: false })
   );
 
   if (banners.length === 0) return null;
