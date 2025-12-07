@@ -1,88 +1,73 @@
-import { type NextRequest, NextResponse } from 'next/server'
-// We import the client directly from @supabase/ssr here
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
-  // Create a response object
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
-  })
+  });
 
-  // Create the middleware-specific Supabase client
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // This middleware implementation still uses get/set/remove
         get(name: string) {
-          return request.cookies.get(name)?.value
+          return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
-          // Update request cookies for the current request
-          request.cookies.set({ name, value, ...options })
-          // Update response cookies to be sent back to the browser
+          request.cookies.set({ name, value, ...options });
           response = NextResponse.next({
             request: { headers: request.headers },
-          })
-          response.cookies.set({ name, value, ...options })
+          });
+          response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          // Update request cookies
-          request.cookies.set({ name, value: '', ...options })
-          // Update response cookies
+          request.cookies.set({ name, value: "", ...options });
           response = NextResponse.next({
             request: { headers: request.headers },
-          })
-          response.cookies.set({ name, value: '', ...options })
+          });
+          response.cookies.set({ name, value: "", ...options });
         },
       },
     }
-  )
+  );
 
-  // Get the current logged-in user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // 1. Get User (Network Call #1 - Unavoidable for security)
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const requestedPath = request.nextUrl.pathname;
+  const url = request.nextUrl.clone();
+  const pathname = url.pathname;
 
-  // **PROTECTION LOGIC**
-
-  // 1. If user is NOT logged in and tries to access admin area
-  if (!user && requestedPath.startsWith('/admin')) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // 2. If user IS logged in...
-  if (user) {
-    // ...and tries to access the login page, redirect them away
-    if (requestedPath === '/login') {
-      return NextResponse.redirect(new URL('/', request.url))
-    }
-
-    // ...and tries to access an admin page...
-    if (requestedPath.startsWith('/admin')) {
-      // ...fetch their profile to check their role.
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      // If not an admin (or profile not found), deny access
-      if (error || !profile || profile.role !== 'admin') {
-        // You can redirect to a '/' homepage or an 'unauthorized' page.
-        // For now, we'll send them to the root.
-        return NextResponse.redirect(new URL('/', request.url))
-      }
-    }
-  }
+  // 2. Auth Protection Logic
   
-  // 3. If all checks pass, continue
-  return response
+  // A. Admin Routes Protection
+  if (pathname.startsWith("/admin")) {
+    if (!user) {
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    // OPTIMIZATION: Check role from Metadata instead of DB Call #2
+    // We assume 'role' is synced to user_metadata on creation/update.
+    const userRole = user.user_metadata?.role;
+
+    if (userRole !== "admin") {
+      // Not an admin? Kick them to home.
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // B. Redirect Logged-In Users away from Login page
+  if (pathname === "/login" && user) {
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+
+  // C. Update Session (Important for scrolling sessions)
+  return response;
 }
 
 export const config = {
@@ -92,9 +77,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
+     * - public folder assets (images, etc)
      */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-    '/users/:path*',
-    '/login'
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};

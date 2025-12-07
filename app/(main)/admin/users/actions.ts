@@ -45,8 +45,16 @@ export async function updateUserProfile(formData: FormData) {
   });
 
   try {
-    // 4. Update Auth Data (Password & Email)
-    const authUpdates: { password?: string; email?: string } = {};
+    // 4. Update Auth Data (Password, Email, AND Metadata)
+    const authUpdates: { 
+      password?: string; 
+      email?: string;
+      user_metadata?: { role?: string; full_name?: string } 
+    } = {
+      // Always sync metadata to ensure middleware stays fast and accurate
+      user_metadata: { role: role, full_name: fullName } 
+    };
+
     if (password && password.trim().length >= 6) {
       authUpdates.password = password.trim();
     }
@@ -54,21 +62,21 @@ export async function updateUserProfile(formData: FormData) {
       authUpdates.email = email.trim();
     }
 
-    if (Object.keys(authUpdates).length > 0) {
-      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-        userId,
-        authUpdates
-      );
-      if (authError) throw authError;
-    }
+    // Always run this update now to sync the role
+    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+      userId,
+      authUpdates
+    );
 
-    // 5. Update Profile Data
+    if (authError) throw authError;
+
+    // 5. Update Profile Data (Database)
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .update({
         full_name: fullName,
         role: role,
-        email: email, // Sync to profile
+        email: email,
         address_text: address,
         latitude: latitude,
         longitude: longitude,
