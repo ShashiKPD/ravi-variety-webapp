@@ -1,11 +1,37 @@
 import { createClient } from "@/utils/supabase/server";
+import { createClient as createStaticClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
 import HeroCarousel from "./components/HeroCarousel";
 import SuperCategoryRail from "./components/SuperCategoryRail";
 import ProductRail from "./components/ProductRail";
+import ProductInfiniteGrid from "./components/ProductInfiniteGrid";
 import { ProductSummary, ProductPrice } from "@/lib/types";
 import { redirect } from "next/navigation";
 
-// Helper to fetch prices (Unchanged)
+// Static Client Setup
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+const getCachedBanners = unstable_cache(
+  async () => {
+    const supabase = createStaticClient(supabaseUrl, supabaseAnonKey);
+    const { data } = await supabase.from("banners").select("*").order("created_at", { ascending: false });
+    return data || [];
+  },
+  ["homepage-banners"],
+  { revalidate: 3600 } 
+);
+
+const getCachedSupercategories = unstable_cache(
+  async () => {
+    const supabase = createStaticClient(supabaseUrl, supabaseAnonKey);
+    const { data } = await supabase.from("supercategories").select("id, name, slug, image_url").order("name");
+    return data || [];
+  },
+  ["homepage-supercategories"],
+  { revalidate: 86400 }
+);
+
 async function fetchPricesForProducts(products: ProductSummary[], supabase: any, userRole: string) {
   if (userRole === "anon" || products.length === 0) {
     return products.map(p => ({ ...p, price_data: null }));
@@ -46,35 +72,32 @@ export default async function HomePage() {
     }
   }
 
-  // UPDATED: Fetch Supercategories instead of Categories
-  const [featuredRes, popularRes, superCatRes, bannersRes] = await Promise.all([
+  // UPDATED: Added 'newArrivalsRes' to the fetch list
+  const [featuredRes, supercategories, banners, recommendedRes, newArrivalsRes, allProductsRes] = await Promise.all([
     supabase.rpc("get_homepage_featured").limit(8),
-    supabase.rpc("get_popular_products", { limit_count: 12 }),
-    supabase.from("supercategories").select("id, name, slug, image_url").order("name"),
-    supabase.from("banners").select("*").order("created_at", { ascending: false })
+    getCachedSupercategories(), 
+    getCachedBanners(),         
+    user ? supabase.rpc("get_recommended_products", { p_user_id: user.id, p_limit: 10 }) : Promise.resolve({ data: [] }),
+    supabase.rpc("get_new_arrivals", { p_limit: 10 }), // New Arrivals Call
+    supabase.rpc("get_all_products", { p_offset: 0, p_limit: 10 })
   ]);
 
   const featuredProducts = await fetchPricesForProducts((featuredRes.data as ProductSummary[]) || [], supabase, userRole);
-  const popularProducts = await fetchPricesForProducts((popularRes.data as ProductSummary[]) || [], supabase, userRole);
-  const supercategories = superCatRes.data || [];
-  const banners = bannersRes.data || [];
-
+  const recommendedProducts = await fetchPricesForProducts((recommendedRes.data as ProductSummary[]) || [], supabase, userRole);
+  const newArrivals = await fetchPricesForProducts((newArrivalsRes.data as ProductSummary[]) || [], supabase, userRole);
+  const allProductsInitial = await fetchPricesForProducts((allProductsRes.data as ProductSummary[]) || [], supabase, userRole);
+  
   return (
     <div className="bg-gray-100 min-h-screen pb-4">
       
-      {/* 1. Supercategory Rail (Top Nav) */}
       <SuperCategoryRail data={supercategories} />
 
-      {/* 2. Hero Carousel */}
-      {/* Note: In Flipkart, carousel is usually BELOW the categories */}
       {user && banners.length > 0 && (
-        <div className="mt-2">
-          <HeroCarousel banners={banners} />
-        </div>
+        <HeroCarousel banners={banners} />
       )}
 
-      {/* 3. Featured Products Rail */}
-      <div className="mt-2">
+      {/* Featured */}
+      <div className="">
         <ProductRail 
           title="Featured Products" 
           products={featuredProducts} 
@@ -84,12 +107,35 @@ export default async function HomePage() {
         />
       </div>
 
-      {/* 4. Popular Products Rail */}
+      {/* Recommended */}
+      {recommendedProducts.length > 0 && (
+        <div className="mt-2">
+          <ProductRail 
+            title="Recommended For You" 
+            products={recommendedProducts} 
+            userRole={userRole}
+            wishlistIds={wishlistVariantIds}
+          />
+        </div>
+      )}
+
+      {/* NEW ARRIVALS */}
+      {newArrivals.length > 0 && (
+        <div className="mt-2">
+          <ProductRail 
+            title="New Arrivals" 
+            products={newArrivals} 
+            viewAllLink="/search?sort=newest" // Link to search page sorted by date
+            userRole={userRole}
+            wishlistIds={wishlistVariantIds}
+          />
+        </div>
+      )}
+
+      {/* All Products */}
       <div className="mt-2">
-        <ProductRail 
-          title="Best Sellers" 
-          products={popularProducts} 
-          viewAllLink="/search?sort=popularity"
+        <ProductInfiniteGrid 
+          initialProducts={allProductsInitial}
           userRole={userRole}
           wishlistIds={wishlistVariantIds}
         />

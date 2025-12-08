@@ -7,9 +7,15 @@ import { Home, Grid, ShoppingCart, User } from "lucide-react";
 export default function MobileBottomNav({ cartCount }: { cartCount: number }) {
   const pathname = usePathname();
 
+  const shouldHideNav = pathname.startsWith("/p/");
+
+  if (shouldHideNav) {
+    return null;
+  }
+
   const navItems = [
     { label: "Home", href: "/", icon: Home },
-    { label: "Categories", href: "/categories", icon: Grid }, // We will build this page in Phase 3
+    { label: "Categories", href: "/categories", icon: Grid },
     { label: "Account", href: "/account", icon: User },
     { label: "Cart", href: "/cart", icon: ShoppingCart, hasBadge: true },
   ];

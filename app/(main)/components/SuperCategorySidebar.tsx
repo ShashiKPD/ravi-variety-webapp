@@ -8,18 +8,18 @@ import { LayoutGrid } from "lucide-react";
 type TaxonomyItem = {
   category_id: number;
   category_name: string;
-  category_slug: string; // Added slug to type
+  category_slug: string;
   category_image: string | null;
   brands: { id: number; name: string; image: string | null }[] | null;
 };
 
 export default function SuperCategorySidebar({ 
   taxonomy, 
-  activeCategoryId, 
+  activeCategorySlug, 
   supercategorySlug 
 }: { 
   taxonomy: TaxonomyItem[];
-  activeCategoryId: string | null;
+  activeCategorySlug: string | null;
   supercategorySlug: string;
 }) {
 
@@ -28,51 +28,53 @@ export default function SuperCategorySidebar({
   }
 
   return (
-    <div className="bg-gray-50 h-full flex flex-col border-r border-gray-200">
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-20">
+    <div className="bg-white h-full flex flex-col border-r border-gray-200">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 pt-2">
         
-        {/* "All" Option */}
+        {/* "All" Option - Clears the category filter */}
         <Link
           href={`/category/${supercategorySlug}`}
-          scroll={false}
-          className="flex flex-col items-center justify-center py-4 px-2 cursor-pointer group"
+          scroll={false} // Prevents scroll jump
+          className="flex flex-col items-center justify-center py-3 px-1 cursor-pointer group"
         >
           <div className={cn(
-            "relative w-12 h-12 md:w-14 md:h-14 mb-2 rounded-xl overflow-hidden transition-all bg-white flex items-center justify-center border border-gray-200",
-            // Active state: Darker border, slight scale
-            !activeCategoryId 
-              ? "ring-2 ring-orange-500 border-transparent shadow-sm" 
-              : "group-hover:border-gray-300"
+            "relative w-14 h-14 mb-2 overflow-hidden transition-all bg-white flex items-center justify-center",
+            // Styling: Square (rounded-md), Dark Border for Active, Light Border for Inactive
+            "rounded-md border", 
+            !activeCategorySlug 
+              ? "border-gray-900 border-2 shadow-sm" // Active: Dark & Thick
+              : "border-gray-200 group-hover:border-gray-400" // Inactive
           )}>
             <LayoutGrid className={cn(
               "w-6 h-6 transition-colors", 
-              !activeCategoryId ? "text-orange-600" : "text-gray-400"
+              !activeCategorySlug ? "text-gray-900" : "text-gray-400"
             )} />
           </div>
           <span className={cn(
             "text-[10px] md:text-xs text-center font-medium leading-tight",
-            !activeCategoryId ? "text-gray-900 font-bold" : "text-gray-500"
+            !activeCategorySlug ? "text-gray-900 font-bold" : "text-gray-600"
           )}>
             All
           </span>
         </Link>
 
         {taxonomy.map((item) => {
-          const isActive = activeCategoryId === String(item.category_id);
+          const isActive = activeCategorySlug === item.category_slug;
 
           return (
             <Link
               key={item.category_id}
-              href={`/category/${item.category_slug}`}
+              // Hybrid URL: Keep Supercategory Context + Switch Category Param
+              href={`/category/${supercategorySlug}?category=${item.category_slug}`}
               scroll={false}
-              className="flex flex-col items-center justify-center py-4 px-2 cursor-pointer group"
+              className="flex flex-col items-center justify-center py-3 px-1 cursor-pointer group"
             >
               <div className={cn(
-                "relative w-12 h-12 md:w-14 md:h-14 mb-2 rounded-xl overflow-hidden transition-all bg-white border border-gray-200",
-                // Active state: Thicker, darker ring. No grayscale on inactive.
+                "relative w-14 h-14 mb-2 overflow-hidden transition-all bg-white",
+                "rounded-md border",
                 isActive 
-                  ? "ring-2 ring-orange-500 border-transparent shadow-sm scale-105" 
-                  : "group-hover:border-gray-300"
+                  ? "border-gray-900 border-2 shadow-sm scale-105" 
+                  : "border-gray-200 group-hover:border-gray-400"
               )}>
                 {item.category_image ? (
                   <Image 
@@ -83,7 +85,7 @@ export default function SuperCategorySidebar({
                     sizes="56px"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400 font-bold text-lg">
+                  <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-400 font-bold text-lg">
                     {item.category_name.charAt(0)}
                   </div>
                 )}
@@ -91,7 +93,7 @@ export default function SuperCategorySidebar({
 
               <span className={cn(
                 "text-[10px] md:text-xs text-center font-medium leading-tight line-clamp-2 max-w-[70px]",
-                isActive ? "text-gray-900 font-bold" : "text-gray-500"
+                isActive ? "text-gray-900 font-bold" : "text-gray-600"
               )}>
                 {item.category_name}
               </span>

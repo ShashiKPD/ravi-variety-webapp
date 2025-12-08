@@ -4,18 +4,42 @@ import Image from "next/image";
 import { LayoutGrid, Tag, Layers } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
+// Optimization: Cache this page for 1 hour
+export const revalidate = 3600;
+
+// FIX: Define the expected shape of the category + parent relation
+type CategoryWithParent = {
+  id: number;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  supercategories: { slug: string } | { slug: string }[] | null;
+};
+
 export default async function AllCategoriesPage() {
   const supabase = await createClient();
 
-  // Fetch Supercategories, Categories, and Brands
   const [superCatsRes, catsRes, brandsRes] = await Promise.all([
-    supabase.from("supercategories").select("*").order("name"),
-    supabase.from("categories").select("*").order("name"),
-    supabase.from("brands").select("*").order("name")
+    supabase
+      .from("supercategories")
+      .select("id, name, slug, image_url")
+      .order("name"),
+    
+    supabase
+      .from("categories")
+      .select("id, name, slug, image_url, supercategories(slug)")
+      .order("name"),
+      
+    supabase
+      .from("brands")
+      .select("id, name, image_url")
+      .order("name")
   ]);
 
   const supercategories = superCatsRes.data || [];
-  const categories = catsRes.data || [];
+  
+  // FIX: Force cast the data to our defined type to solve the 'never' error
+  const categories = (catsRes.data || []) as unknown as CategoryWithParent[];
   const brands = brandsRes.data || [];
 
   return (
@@ -30,7 +54,7 @@ export default async function AllCategoriesPage() {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
           {supercategories.map((supercat) => (
             <Link key={supercat.id} href={`/category/${supercat.slug}`} className="group">
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden py-2"> {/* Added py-2 */}
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden py-2">
                 <CardContent className="p-2 flex flex-col items-center gap-2">
                   <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-purple-50 overflow-hidden border border-purple-100">
                     {supercat.image_url ? (
@@ -64,32 +88,46 @@ export default async function AllCategoriesPage() {
         </h2>
         
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-          {categories.map((cat) => (
-            <Link key={cat.id} href={`/category/${cat.slug}`} className="group">
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden py-2"> {/* Added py-2 */}
-                <CardContent className="p-2 flex flex-col items-center gap-2">
-                  <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-blue-50 overflow-hidden border border-blue-100">
-                    {cat.image_url ? (
-                      <Image 
-                        src={cat.image_url} 
-                        alt={cat.name} 
-                        fill 
-                        className="object-cover group-hover:scale-110 transition-transform duration-500"
-                        sizes="100px"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-blue-300 font-bold text-lg">
-                        {cat.name.charAt(0)}
+          {categories.map((cat) => {
+             // Logic: Resolve parent slug safely with the new type
+             const parentData = cat.supercategories; 
+             
+             // Check if array or object safely
+             const parentSlug = Array.isArray(parentData) 
+                ? parentData[0]?.slug 
+                : parentData?.slug;
+             
+             const href = parentSlug 
+                ? `/category/${parentSlug}?category=${cat.slug}` 
+                : `/category/${cat.slug}`;
+
+             return (
+                <Link key={cat.id} href={href} className="group">
+                  <Card className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden py-2">
+                    <CardContent className="p-2 flex flex-col items-center gap-2">
+                      <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-blue-50 overflow-hidden border border-blue-100">
+                        {cat.image_url ? (
+                          <Image 
+                            src={cat.image_url} 
+                            alt={cat.name} 
+                            fill 
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                            sizes="100px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-blue-300 font-bold text-lg">
+                            {cat.name.charAt(0)}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <span className="text-xs sm:text-sm font-medium text-center text-gray-700 leading-tight line-clamp-2">
-                    {cat.name}
-                  </span>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                      <span className="text-xs sm:text-sm font-medium text-center text-gray-700 leading-tight line-clamp-2">
+                        {cat.name}
+                      </span>
+                    </CardContent>
+                  </Card>
+                </Link>
+             );
+          })}
         </div>
       </section>
 
@@ -102,7 +140,7 @@ export default async function AllCategoriesPage() {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
           {brands.map((brand) => (
             <Link key={brand.id} href={`/search?brands=${brand.id}`} className="group">
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow py-2"> {/* Added py-2 */}
+              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow py-2">
                 <CardContent className="p-2 flex flex-col items-center gap-2">
                   <div className="relative w-full aspect-[3/2] bg-white rounded-md overflow-hidden border border-gray-100 p-2">
                     {brand.image_url ? (

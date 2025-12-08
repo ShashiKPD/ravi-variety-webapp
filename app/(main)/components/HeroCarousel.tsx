@@ -53,7 +53,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
   if (banners.length === 0) return null;
 
   return (
-    <div className="w-full group relative pb-4">
+    <div className="w-full group relative bg-white">
       <Carousel
         setApi={setApi}
         className="w-full"
@@ -63,7 +63,7 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
         <CarouselContent className="-ml-0">
           {banners.map((banner) => (
             <CarouselItem key={banner.id} className="pl-0">
-              <Card className="border-0 shadow-none rounded-none overflow-hidden p-0">
+              <Card className="border-0 shadow-none rounded-2xl mx-4 overflow-hidden p-0">
                 <div className="relative aspect-[2.5/1] w-full">
                   <Image
                     src={banner.image_url}
@@ -81,8 +81,8 @@ export default function HeroCarousel({ banners }: { banners: Banner[] }) {
         </CarouselContent>
         
         {/* Arrows still inside the image area for clarity */}
-        <CarouselPrevious className="left-4 hidden sm:flex bg-white/80 hover:bg-white border-none" />
-        <CarouselNext className="right-4 hidden sm:flex bg-white/80 hover:bg-white border-none" />
+        <CarouselPrevious className="left-8 hidden sm:flex bg-white/80 hover:bg-white border-none" />
+        <CarouselNext className="right-8 hidden sm:flex bg-white/80 hover:bg-white border-none" />
       </Carousel>
 
       {/* CUSTOM ANIMATED DOTS (Moved Below) */}

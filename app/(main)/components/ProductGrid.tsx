@@ -41,15 +41,16 @@ export default function ProductGrid({
   }
 
   return (
-    <div className="flex flex-col gap-8">
+    // Added pb-24 to prevent bottom nav overlap on mobile
+    <div className="flex flex-col gap-6 pb-24">
       
       {/* GRID LAYOUT:
-        - Mobile: grid-cols-2 (Side by side vertical cards)
+        - Mobile: grid-cols-2 (Vertical layout enforced by ProductCard design)
         - Tablet: grid-cols-3
         - Desktop: grid-cols-4 
-        - Gap: gap-[2px] (Negligible spacing)
+        - Gap: gap-2 (Clean separation between cards)
       */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[2px]">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 sm:gap-2 md:gap-4">
         {products.map((product) => (
           <ProductCard
             key={product.variant_id}
