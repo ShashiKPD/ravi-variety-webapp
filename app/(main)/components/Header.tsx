@@ -52,6 +52,7 @@ export default function Header({
   const pathname = usePathname();
   
   const isContextPage = pathname?.startsWith("/p/") || pathname?.startsWith("/category/");
+  const isAdminPage = pathname?.startsWith("/admin");
   const isAdmin = userRole === "admin";
 
   const handleSearch = (query: string) => {
@@ -141,11 +142,13 @@ export default function Header({
                 </div>
               </div>
 
-              <div className="mt-1">
-                <Suspense fallback={<div className="h-10 bg-gray-100 rounded-full w-full animate-pulse" />}>
-                   <SearchBar onSearch={handleSearch} />
-                </Suspense>
-              </div>
+              {!isAdminPage && (
+                <div className="mt-1">
+                  <Suspense fallback={<div className="h-10 bg-gray-100 rounded-full w-full animate-pulse" />}>
+                    <SearchBar onSearch={handleSearch} />
+                  </Suspense>
+                </div>
+              )}
             </div>
           )}
         </div>

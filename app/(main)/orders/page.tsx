@@ -52,7 +52,7 @@ export default async function OrdersPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8 pb-24">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">Your Orders</h1>
         <span className="text-sm text-gray-500 font-medium">
@@ -63,8 +63,6 @@ export default async function OrdersPage() {
       <div className="space-y-6">
         {orders && orders.length > 0 ? (
           orders.map((order) => {
-            // Logic to grab thumbnails
-            // We take the first 4 distinct images to show as a preview
             const previewItems = order.order_items.slice(0, 4);
             const remainingCount = Math.max(0, order.order_items.length - 4);
             
@@ -101,7 +99,7 @@ export default async function OrdersPage() {
                     {previewItems.length > 0 ? (
                       <div className="flex -space-x-3 hover:space-x-1 transition-all duration-300 pl-1">
                         {previewItems.map((item: any, idx: number) => {
-                          // Fallback image if product was deleted or has no image
+                          // Fallback image handling
                           const imgUrl = item.products?.image_urls?.[0] || null;
                           
                           return (
@@ -113,7 +111,7 @@ export default async function OrdersPage() {
                               {imgUrl ? (
                                 <Image 
                                   src={imgUrl} 
-                                  alt={item.product_name}
+                                  alt={item.product_name || "Product"}
                                   fill
                                   className="object-cover"
                                 />
@@ -150,7 +148,7 @@ export default async function OrdersPage() {
                     </div>
                     
                     <Button asChild size="sm" variant="default" className="bg-gray-900 text-white hover:bg-gray-800 rounded-full px-6">
-                      <Link href={`/orders/${order.id}`} className="flex items-center gap-2">
+                      <Link href={`/orders/${order.order_number}`} className="flex items-center gap-2">
                         Details <ChevronRight className="w-4 h-4" />
                       </Link>
                     </Button>

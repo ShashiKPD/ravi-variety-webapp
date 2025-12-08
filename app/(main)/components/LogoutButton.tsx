@@ -1,24 +1,30 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 
-// We'll pass a className from the Header to style it
 export default function LogoutButton({ className }: { className?: string }) {
-  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const supabase = createClient();
 
   const handleLogout = async () => {
+    if (isLoading) return;
+    setIsLoading(true);
+
     await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh(); // Force a server refresh to update state
+    // Force full page reload to clear client-side cache
+    window.location.href = "/login";
   };
 
   return (
-    // Use "ghost" variant and pass through the className
-    <Button variant="ghost" onClick={handleLogout} className={className}>
-      Logout
+    <Button 
+      variant="ghost" 
+      onClick={handleLogout} 
+      className={className}
+      disabled={isLoading}
+    >
+      {isLoading ? "Logging out..." : "Logout"}
     </Button>
   );
 }

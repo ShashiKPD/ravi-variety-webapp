@@ -17,7 +17,10 @@ export default function BackButton({ href, label = "Back", className }: Props) {
       variant="ghost" 
       size="sm" 
       asChild 
-      className={cn("-ml-2 pl-2 gap-2 text-gray-500 hover:text-gray-900 w-fit mb-2", className)}
+      className={cn(
+        "-ml-2 pl-2 pr-3 gap-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 w-fit mb-2 transition-all duration-200 active:scale-95", 
+        className
+      )}
     >
       <Link href={href}>
         <ArrowLeft className="w-4 h-4" />
