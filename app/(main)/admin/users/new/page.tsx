@@ -60,7 +60,7 @@ export default function CreateUserPage() {
     if (avatarFile) formData.append("avatar", avatarFile);
 
     try {
-      const response = await fetch("/api/admin/create-user", {
+      const response = await fetch("/admin/api/create-user", {
         method: "POST",
         body: formData, // Send as multipart/form-data
       });
