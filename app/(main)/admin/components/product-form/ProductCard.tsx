@@ -12,6 +12,7 @@ import {
 import { Box, Copy, Trash2, ChevronDown, Tag } from "lucide-react";
 import { ProductInput } from "./types";
 import ImageManager from "./ImageManager";
+import BulkPricingManager from "./BulkPricingManager";
 
 type Props = {
   product: ProductInput;
@@ -220,6 +221,13 @@ export default function ProductCard({
               </div>
 
             </div>
+          </div>
+          {/*  BULK PRICING SECTION */}
+          <div className="mt-4">
+            <BulkPricingManager 
+              tiers={product.bulkTiers || []} 
+              onChange={(newTiers) => onUpdate(product.id, 'bulkTiers', newTiers)} 
+            />
           </div>
 
           {/* Media & Features */}

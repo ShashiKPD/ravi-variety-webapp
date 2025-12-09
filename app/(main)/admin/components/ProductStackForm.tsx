@@ -33,29 +33,46 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
   const [categoryId, setCategoryId] = useState(initialData ? String(initialData.categoryId) : "");
   const [selectedGroupId, setSelectedGroupId] = useState("");
 
+  // 1. UPDATED INITIALIZATION LOGIC
   const initializeProducts = () => {
     if (initialData && initialData.variants.length > 0) {
-      return initialData.variants.map(v => ({
-        id: v.id,
-        isExpanded: false,
-        name: v.name,
-        description: v.description || "",
-        sku: v.sku,
-        stock: String(v.stock_quantity),
-        mrp: v.mrp || "", 
-        price_retailer: v.price_retailer || "",
-        price_wholesaler: v.price_wholesaler || "",
-        size_option: v.options?.size || "",
-        unit_id: v.unit_id ? String(v.unit_id) : "", 
-        is_featured: v.is_featured,
-        images: [],
-        previewUrls: v.image_urls || []
-      }));
+      return initialData.variants.map(v => {
+        // Filter out the base price tiers (min_qty = 1)
+        // The base prices are already mapped to price_retailer/wholesaler fields
+        const bulkTiers = v.price_tiers 
+          ? v.price_tiers
+              .filter((t: any) => t.min_quantity > 1)
+              .map((t: any) => ({
+                minQuantity: t.min_quantity,
+                unitPrice: t.unit_price,
+                role: t.role
+              }))
+          : [];
+
+        return {
+          id: v.id,
+          isExpanded: false,
+          name: v.name,
+          description: v.description || "",
+          sku: v.sku,
+          stock: String(v.stock_quantity),
+          mrp: v.mrp || "", 
+          price_retailer: v.price_retailer || "",
+          price_wholesaler: v.price_wholesaler || "",
+          size_option: v.options?.size || "",
+          unit_id: v.unit_id ? String(v.unit_id) : "", 
+          is_featured: v.is_featured,
+          images: [],
+          previewUrls: v.image_urls || [],
+          bulkTiers: bulkTiers // <--- LOAD EXISTING BULK TIERS
+        };
+      });
     }
     return [{ 
       id: Date.now(), isExpanded: true, name: "", description: "", sku: "", 
       stock: "", mrp: "", price_retailer: "", price_wholesaler: "", 
-      size_option: "", unit_id: "", is_featured: false, images: [], previewUrls: [] 
+      size_option: "", unit_id: "", is_featured: false, 
+      images: [], previewUrls: [], bulkTiers: [] // <--- DEFAULT EMPTY
     }];
   };
 
@@ -71,10 +88,8 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
       description: prev.description || "", sku: "", stock: "", mrp: "", 
       price_retailer: "", price_wholesaler: "", size_option: "", 
       unit_id: prev.unit_id || "", 
-      is_featured: false, images: [], previewUrls: [] 
+      is_featured: false, images: [], previewUrls: [], bulkTiers: [] 
     }]);
-    
-    // Scroll to bottom logic could go here
   };
 
   const removeProduct = async (id: number | string) => {
@@ -135,6 +150,7 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
     setIsSubmitting(true);
     const formData = new FormData();
 
+    // 2. UPDATED MAPPING LOGIC
     const mapProductToMeta = (p: ProductInput) => ({
       id: p.id,
       name: p.name, description: p.description, sku: p.sku, stock: p.stock, 
@@ -143,7 +159,15 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
       unit_id: p.unit_id ? Number(p.unit_id) : null,
       image_count: p.images.length,
       new_image_count: p.images.length, 
-      existing_images: p.previewUrls.filter(url => url.startsWith("http"))
+      existing_images: p.previewUrls.filter(url => url.startsWith("http")),
+      
+      // SEND BULK TIERS TO SERVER
+      bulk_tiers: p.bulkTiers.map(t => ({
+        min_quantity: t.minQuantity,
+        unit_price: t.unitPrice,
+        role: t.role,
+        mrp: p.mrp // Inherit MRP from main product
+      }))
     });
 
     const productsMeta = products.map(mapProductToMeta);
@@ -174,14 +198,13 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
       toast.error(result.error);
     } else {
       toast.success(result.success);
-      if (!isEditMode) window.location.href = "/admin/products"; // Redirect after create
+      if (!isEditMode) window.location.href = "/admin/products"; 
     }
   };
 
   return (
     <div className="space-y-8">
       
-      {/* --- Mode Switcher (New vs Existing) --- */}
       {!isEditMode && (
         <div className="bg-gray-100 p-1.5 rounded-lg inline-flex w-full sm:w-auto">
           <button 
@@ -205,7 +228,6 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
 
       <form onSubmit={handleSubmit} className="space-y-8">
         
-        {/* --- 1. Classification Section --- */}
         <Classification 
           mode={isEditMode ? 'new' : mode} 
           brands={brands} categories={categories} existingGroups={existingGroups}
@@ -213,7 +235,6 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
           selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId}
         />
 
-        {/* --- 2. Product Variants List --- */}
         <div className="space-y-4">
            {products.map((p, index) => (
              <ProductCard 
@@ -230,7 +251,6 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
            ))}
         </div>
 
-        {/* --- 3. Sticky Action Footer --- */}
         <div className="sticky bottom-4 z-20 flex flex-col sm:flex-row justify-between gap-3 p-4 bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg ring-1 ring-black/5">
           <Button 
             type="button" 

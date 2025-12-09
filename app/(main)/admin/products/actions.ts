@@ -83,49 +83,44 @@ export async function createProductStack(formData: FormData) {
 
 export async function updateProductQuick(formData: FormData) {
   const supabase = await createClient();
+  const productId = formData.get("product_id") as string;
   
   // 1. Auth Check
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  const productId = formData.get("product_id") as string;
   
-  // 2. Extract Data
-  const updates = {
-    name: formData.get("name") as string,
-    sku: formData.get("sku") as string,
-    stock_quantity: Number(formData.get("stock")),
-    is_featured: formData.get("is_featured") === "on"
+  const pData = {
+    mrp: formData.get("mrp"),
+    price_retailer: formData.get("price_retailer"),
+    price_wholesaler: formData.get("price_wholesaler"),
+    bulk_tiers: JSON.parse(formData.get("bulk_tiers") as string || "[]")
   };
 
-  // 3. Update Product Table
-  const { error: prodError } = await supabase
+  // 1. Update Core Fields
+  const { error: updError } = await supabase
     .from("products")
-    .update(updates)
+    .update({
+      name: formData.get("name"),
+      sku: formData.get("sku"),
+      stock_quantity: Number(formData.get("stock")),
+      is_featured: formData.get("is_featured") === "on"
+    })
     .eq("id", productId);
 
-  if (prodError) return { error: `Product update failed: ${prodError.message}` };
+  if (updError) return { error: updError.message };
 
-  // 4. Update Prices (Retailer)
-  const price_retailer = formData.get("price_retailer");
-  const price_wholesaler = formData.get("price_wholesaler");
-  const mrp = formData.get("mrp");
+  // 2. Update Prices (Clear & Re-insert)
+  // We can use the helper function directly via RPC
+  await supabase.from("price_tiers").delete().eq("product_id", productId);
+  
+  const { error: rpcError } = await supabase.rpc("insert_variant_prices", {
+    p_variant_id: Number(productId),
+    p_data: pData
+  });
 
-  // Helper to update specific role tier
-  const updateTier = async (role: string, price: any) => {
-    await supabase.from("price_tiers")
-      .update({ unit_price: Number(price), mrp: Number(mrp) })
-      .match({ product_id: productId, role: role, min_quantity: 1 });
-  };
-
-  await Promise.all([
-    updateTier('retailer', price_retailer),
-    updateTier('wholesaler', price_wholesaler),
-    updateTier('admin', price_retailer) // Keep admin synced with retailer
-  ]);
+  if (rpcError) return { error: rpcError.message };
 
   revalidatePath("/admin/products");
-  revalidatePath(`/admin/products/${productId}/edit`);
-  
-  return { success: "Product updated successfully" };
+  return { success: "Updated" };
 }
