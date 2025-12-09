@@ -27,7 +27,7 @@ function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
     onSearch(query);
   };
 
-  return (
+  return (<>
     <form onSubmit={handleSubmit} className="w-full relative">
       <Input
         type="search"
@@ -40,11 +40,13 @@ function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
        <button 
          type="button"
          onClick={() => setShowScanner(true)}
-         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 p-1"
+         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 p-1 lg:hidden"
        >
          <ScanBarcode className="w-5 h-5" />
        </button>
     </form>
+    {showScanner && <ScanToOrder onClose={() => setShowScanner(false)} />}
+    </>
   );
 }
 

@@ -9,14 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Loader2, Plus, Minus, ShoppingCart, Trash2, Package } from "lucide-react";
 import { toast } from "sonner";
+import { useBeep } from "@/hooks/use-beep";
 
-// Simple beep sound effect using Audio API
-const playBeep = () => {
-  const audio = new Audio("/sounds/beep.mp3"); // Ensure you have a beep.mp3 in public/sounds
-  // Fallback if no file:
-  if(!audio) return;
-  audio.play().catch(() => {});
-};
 
 type ScannedItem = {
   id: number;
@@ -33,6 +27,7 @@ export default function ScanToOrder({ onClose }: { onClose: () => void }) {
   const [isProcessing, setIsProcessing] = useState(false); // Processing the barcode lookup
   const lastScannedCode = useRef<string>("");
   const lastScanTime = useRef<number>(0);
+  const beep = useBeep();
 
   const handleScan = async (code: string) => {
     const now = Date.now();
@@ -43,7 +38,7 @@ export default function ScanToOrder({ onClose }: { onClose: () => void }) {
     
     lastScannedCode.current = code;
     lastScanTime.current = now;
-    playBeep();
+    beep();
 
     // 1. Check if item already exists in our local list
     // Note: We need to fetch product ID from code first usually, but for UX speed, 

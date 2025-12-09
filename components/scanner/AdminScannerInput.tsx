@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScanBarcode } from "lucide-react";
 import BaseScanner from "./BaseScanner";
+import { useBeep } from "@/hooks/use-beep";
 
 type Props = {
   value: string;
@@ -15,6 +16,7 @@ type Props = {
 
 export default function AdminScannerInput({ value, onChange, placeholder, className }: Props) {
   const [showScanner, setShowScanner] = useState(false);
+  const beep = useBeep();
 
   return (
     <div className="relative">
@@ -29,7 +31,7 @@ export default function AdminScannerInput({ value, onChange, placeholder, classN
         variant="ghost"
         size="icon"
         onClick={() => setShowScanner(true)}
-        className="absolute right-0 top-0 h-full w-10 text-gray-500 hover:text-blue-600"
+        className="absolute right-0 top-0 h-full w-10 text-gray-500 hover:text-blue-600 active:scale-90 active:bg-gray-100"
       >
         <ScanBarcode className="w-4 h-4" />
       </Button>
@@ -38,6 +40,7 @@ export default function AdminScannerInput({ value, onChange, placeholder, classN
         <div className="fixed inset-0 z-50 bg-black">
           <BaseScanner 
             onScan={(code) => {
+              beep();
               onChange(code);
               setShowScanner(false);
             }} 
