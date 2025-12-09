@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+// Helper: Ensure user is active before allowing actions
 async function validateUser(supabase: any, userId: string) {
   const { data: profile } = await supabase
     .from("profiles")
@@ -16,7 +17,8 @@ async function validateUser(supabase: any, userId: string) {
   }
   return true;
 }
-// This Server Action will be called by our button
+
+// 1. Add to Cart
 export async function addToCart(productId: number, quantity: number = 1) {
   const supabase = await createClient();
 
@@ -25,9 +27,8 @@ export async function addToCart(productId: number, quantity: number = 1) {
   if (!user) {
     return { error: "You must be logged in to add to cart." };
   }
-  // Check Status
-  const isValid = await validateUser(supabase, user.id);
-  if (!isValid) {
+  
+  if (!(await validateUser(supabase, user.id))) {
     redirect("/auth/signout"); 
   }
 
@@ -44,7 +45,7 @@ export async function addToCart(productId: number, quantity: number = 1) {
 
   try {
     if (existingItem) {
-      // UPDATE: Add the new quantity to the existing quantity
+      // UPDATE: Add to existing quantity
       const { error } = await supabase
         .from("cart_items")
         .update({ quantity: existingItem.quantity + quantity })
@@ -53,7 +54,7 @@ export async function addToCart(productId: number, quantity: number = 1) {
       if (error) throw error;
 
     } else {
-      // INSERT: Use the passed quantity
+      // INSERT: New item
       const { error } = await supabase
         .from("cart_items")
         .insert({
@@ -66,7 +67,7 @@ export async function addToCart(productId: number, quantity: number = 1) {
     }
 
     revalidatePath("/cart"); 
-    revalidatePath("/"); // Update header cart count
+    revalidatePath("/"); // Update header badge
     return { success: "Added to cart" };
 
   } catch (error: any) {
@@ -74,21 +75,14 @@ export async function addToCart(productId: number, quantity: number = 1) {
   }
 }
 
+// 2. Remove Item
 export async function removeItem(productId: number) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { error: "You must be logged in." };
-  }
+  if (!user) return { error: "You must be logged in." };
+  if (!(await validateUser(supabase, user.id))) redirect("/auth/signout");
 
-  if (!(await validateUser(supabase, user.id))) {
-    redirect("/auth/signout");
-  }
-
-  // Find and delete the item
   const { error } = await supabase
     .from("cart_items")
     .delete()
@@ -99,30 +93,23 @@ export async function removeItem(productId: number) {
     return { error: `Database error: ${error.message}` };
   }
 
-  revalidatePath("/cart"); // Refresh the cart page data
-  revalidatePath("/"); // Refresh the main layout (for the cart count)
+  revalidatePath("/cart");
+  revalidatePath("/"); 
   return { success: "Item removed." };
 }
 
+// 3. Update Quantity
 export async function updateQuantity(productId: number, newQuantity: number) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!user) {
-    return { error: "You must be logged in." };
-  }
-  if (!(await validateUser(supabase, user.id))) {
-    redirect("/auth/signout");
-  }
+  if (!user) return { error: "You must be logged in." };
+  if (!(await validateUser(supabase, user.id))) redirect("/auth/signout");
 
-  // If quantity is 0, remove the item
   if (newQuantity <= 0) {
     return await removeItem(productId);
   }
 
-  // Otherwise, update the quantity
   const { error } = await supabase
     .from("cart_items")
     .update({ quantity: newQuantity })
@@ -137,29 +124,47 @@ export async function updateQuantity(productId: number, newQuantity: number) {
   return { success: "Quantity updated." };
 }
 
-export async function submitOrder() {
+// 4. Place Order (Transaction)
+export async function placeOrder() {
   const supabase = await createClient();
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  if (!(await validateUser(supabase, user.id))) {
+  // Validate Active Status
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_active")
+    .eq("id", user.id)
+    .single();
+  
+  if (profile && profile.is_active === false) {
     redirect("/auth/signout");
   }
 
   try {
-    // Call the Transactional RPC
-    const { data: orderId, error } = await supabase
+    // 1. Call RPC (Returns numeric ID)
+    const { data: numericId, error } = await supabase
       .rpc("place_order", { p_user_id: user.id });
 
     if (error) throw error;
 
-    // Redirect to the new Order Details page
-    // We use redirect() outside the try/catch block usually, 
-    // but inside an action it throws an error that Next.js catches. 
-    // So we return the ID and let the Client Component handle the redirect 
-    // OR we just redirect here if we are in a <form> context.
-    return { success: true, orderId };
+    // 2. Fetch the 'order_number' string for redirection
+    const { data: orderData, error: fetchError } = await supabase
+      .from("orders")
+      .select("order_number")
+      .eq("id", numericId)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    // 3. Clear Caches
+    revalidatePath("/cart");   
+    revalidatePath("/orders"); 
+    revalidatePath("/");       
+
+    // 4. Return the STRING ID (e.g., "ORD-8921")
+    return { success: true, orderId: orderData.order_number };
 
   } catch (error: any) {
     console.error("Order Failed:", error);

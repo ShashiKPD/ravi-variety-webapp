@@ -26,12 +26,16 @@ export default async function NewProductPage() {
   }));
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 pb-32">
       
-      {/* Back Button to Admin Panel */}
-      <BackButton href="/admin" label="Back to Dashboard" />
-
-      <h1 className="text-2xl font-bold mb-6">Product Management</h1>
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <BackButton href="/admin/products" label="Back to Inventory" />
+        <div className="mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Add New Product</h1>
+          <p className="text-sm text-gray-500">Create a single product or a family of variants.</p>
+        </div>
+      </div>
       
       <ProductStackForm 
         categories={categories} 

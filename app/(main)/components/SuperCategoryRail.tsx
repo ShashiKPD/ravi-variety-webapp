@@ -14,7 +14,7 @@ export default function SuperCategoryRail({ data }: { data: SuperCategory[] }) {
   if (!data || data.length === 0) return null;
 
   return (
-    <div className="bg-white py-3 border-b border-gray-100">
+    <div className="bg-white py-3 border- border-gray-100">
       <div className="flex overflow-x-auto scrollbar-hide px-4 gap-3 md:justify-center">
         {data.map((item) => (
           <Link 

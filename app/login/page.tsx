@@ -59,7 +59,7 @@ function LoginForm() {
   return (
     <Card className="w-full max-w-sm shadow-lg border-0 sm:border">
       <CardHeader className="text-center space-y-1">
-        <CardTitle className="text-2xl font-bold text-blue-900">Ravi Variety</CardTitle>
+        <CardTitle className="text-2xl font-bold text-blue-900">Ravi Variety B2B</CardTitle>
         <CardDescription>Enter your mobile number to access your account</CardDescription>
       </CardHeader>
       <CardContent>

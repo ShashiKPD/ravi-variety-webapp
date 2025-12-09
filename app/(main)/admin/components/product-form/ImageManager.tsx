@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { Label } from "@/components/ui/label";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Image as ImageIcon } from "lucide-react";
 
 type Props = {
   images: File[];
@@ -35,11 +35,14 @@ export default function ImageManager({ images, previewUrls, onAddImages, onRemov
   };
 
   return (
-    <div className="lg:col-span-2">
-      <Label className="mb-2 block text-xs font-medium text-gray-700">Product Images (Drag to Reorder)</Label>
+    <div className="lg:col-span-2 space-y-3">
+      <div className="flex justify-between items-end">
+        <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Product Images</Label>
+        <span className="text-[10px] text-gray-400">Drag to reorder</span>
+      </div>
       
-      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 min-h-[140px]">
-        <div className="flex flex-wrap gap-3">
+      <div className="border border-gray-200 rounded-xl p-4 bg-gray-50/50 min-h-[120px]">
+        <div className="flex flex-wrap gap-4">
           
           {previewUrls.map((url, idx) => (
             <div 
@@ -49,23 +52,23 @@ export default function ImageManager({ images, previewUrls, onAddImages, onRemov
               onDragEnter={() => dragOverItem.current = idx}
               onDragEnd={handleDragSort}
               onDragOver={(e) => e.preventDefault()}
-              className="relative w-24 h-24 group bg-white rounded-md shadow-sm border border-gray-200 cursor-move shrink-0"
+              className="relative w-24 h-24 group bg-white rounded-lg shadow-sm border border-gray-200 cursor-move shrink-0 hover:border-blue-400 transition-all overflow-hidden"
             >
-              <img src={url} alt="Product" className="w-full h-full object-cover rounded-md" />
+              <img src={url} alt={`Product ${idx + 1}`} className="w-full h-full object-cover" />
               
-              {/* Number Badge (Top Left) */}
-              <div className="absolute top-1 left-1 bg-blue-600/90 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm z-10 backdrop-blur-sm">
+              {/* Number Badge */}
+              <div className="absolute top-1 left-1 bg-black/60 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-md backdrop-blur-sm pointer-events-none">
                 {idx + 1}
               </div>
 
-              {/* Delete Button (Top Right) - FIXED: Always Visible & Accessible */}
+              {/* Remove Button */}
               <button 
                 type="button" 
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent drag/click conflict
+                  e.stopPropagation();
                   onRemoveImage(idx);
                 }}
-                className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-md hover:bg-red-600 focus:outline-none z-20 active:scale-95"
+                className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded-md shadow-sm hover:bg-red-50 hover:text-red-600 transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
                 title="Remove Image"
               >
                 <X className="w-3.5 h-3.5" />
@@ -73,7 +76,8 @@ export default function ImageManager({ images, previewUrls, onAddImages, onRemov
             </div>
           ))}
 
-          <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 bg-white border-2 border-dashed border-gray-300 rounded-md hover:border-blue-500 hover:bg-blue-50 transition-all active:bg-blue-100">
+          {/* Add Button */}
+          <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 bg-white border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all active:scale-95 group">
             <input 
               type="file" 
               multiple 
@@ -81,11 +85,20 @@ export default function ImageManager({ images, previewUrls, onAddImages, onRemov
               className="hidden" 
               onChange={e => onAddImages(e.target.files)} 
             />
-            <Plus className="h-6 w-6 text-gray-400 mb-1" />
-            <span className="text-[10px] font-medium text-gray-500">Add</span>
+            <div className="bg-blue-50 group-hover:bg-blue-100 p-2 rounded-full mb-1 transition-colors">
+              <Plus className="h-4 w-4 text-blue-600" />
+            </div>
+            <span className="text-[10px] font-medium text-gray-500 group-hover:text-blue-600">Add Image</span>
           </label>
 
         </div>
+        
+        {previewUrls.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-4 text-gray-400 text-xs">
+            <ImageIcon className="w-8 h-8 mb-2 opacity-20" />
+            <span>No images selected</span>
+          </div>
+        )}
       </div>
     </div>
   );

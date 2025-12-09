@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { ShoppingCart, ArrowRight, ShieldCheck } from "lucide-react"; 
 import CartItemList from "../components/CartItemList";
 import PlaceOrderButton from "../components/PlaceOrderButton";
 
@@ -14,7 +15,7 @@ export default async function CartPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // 2. Get User Role
+  // 2. Get User Role & Status
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, is_active")
@@ -31,15 +32,22 @@ export default async function CartPage() {
   const { data: cartItems } = await supabase
     .from("cart_items")
     .select("id, product_id, quantity")
-    .eq("user_id", user.id);
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
 
+  // --- EMPTY STATE ---
   if (!cartItems || cartItems.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold mb-2">My Cart</h1>
-        <p className="text-gray-500 mb-6 text-sm">Your cart is empty.</p>
-        <Button asChild variant="outline">
-          <Link href="/">Continue Shopping</Link>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center">
+        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+          <ShoppingCart className="w-8 h-8 text-gray-400" />
+        </div>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">Your cart is empty</h1>
+        <p className="text-gray-500 mb-6 text-sm max-w-xs mx-auto">
+          Start adding products to create your order request.
+        </p>
+        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8">
+          <Link href="/">Browse Products</Link>
         </Button>
       </div>
     );
@@ -47,7 +55,7 @@ export default async function CartPage() {
 
   const productIds = cartItems.map((item) => item.product_id);
 
-  // 4. Fetch Products (Variants) with Unit ID
+  // 4. Fetch Products
   const { data: products } = await supabase
     .from("products")
     .select(`
@@ -57,14 +65,14 @@ export default async function CartPage() {
     `)
     .in("id", productIds);
 
-  // 5. Fetch Pricing Tiers
+  // 5. Fetch Pricing
   const { data: priceTiers } = await supabase
     .from("price_tiers")
     .select("product_id, min_quantity, unit_price, mrp")
     .eq("role", userRole)
     .in("product_id", productIds);
 
-  // 6. Merge & Calculate Totals
+  // 6. Merge & Calculate
   let subtotal = 0;
 
   const detailedCart = cartItems.map((item) => {
@@ -106,48 +114,44 @@ export default async function CartPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24">
-      <h1 className="text-2xl font-bold mb-4 px-4 sm:px-0 text-gray-900">Shopping Cart</h1>
+    <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8 py-6 sm:py-8 pb-32">
+      <h1 className="text-2xl font-bold mb-6 px-4 sm:px-0 text-gray-900 flex items-center gap-2">
+        Shopping Cart <span className="text-gray-400 font-normal text-lg">({cartItems.length})</span>
+      </h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10">
         
         {/* --- Item List --- */}
         <div className="lg:col-span-8">
-          <Card className="border-x-0 sm:border-x border-t border-b-0 sm:border-b shadow-sm bg-white rounded-none sm:rounded-lg overflow-hidden">
-            <CardContent className="p-0">
-              <CartItemList items={detailedCart} />
-            </CardContent>
-          </Card>
+          <div className="bg-white sm:rounded-xl border-y sm:border border-gray-200 shadow-sm overflow-hidden">
+            <CartItemList items={detailedCart} />
+          </div>
         </div>
 
         {/* --- Order Summary --- */}
         <div className="lg:col-span-4 px-4 sm:px-0">
-          <Card className="sticky top-24 border-gray-200 bg-white shadow-sm">
-            <CardHeader className="pb-3 border-b border-gray-50">
-              <CardTitle className="text-lg">Order Summary</CardTitle>
+          <Card className="sticky top-24 border-gray-200 bg-white shadow-sm rounded-xl overflow-hidden">
+            <CardHeader className="pb-4 border-b border-gray-100 bg-gray-50/50">
+              <CardTitle className="text-lg font-semibold text-gray-900">Order Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 pt-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal ({cartItems.length} items)</span>
-                <span className="font-medium">₹{subtotal.toFixed(2)}</span>
+            <CardContent className="space-y-4 pt-6">
+              
+              <div className="flex justify-between items-baseline">
+                <span className="text-base font-semibold text-gray-900">Total Amount</span>
+                <span className="text-2xl font-bold text-gray-900">₹{subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">GST (Calculated at checkout)</span>
-                <span className="font-medium">--</span>
+              
+              <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded-md border border-green-100">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Price inclusive of GST. No shipping fees.</span>
               </div>
               
               <Separator />
               
-              <div className="flex justify-between text-lg font-bold text-gray-900">
-                <span>Total</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              
               <PlaceOrderButton />
               
-              <p className="text-[10px] text-center text-gray-400 mt-2 leading-tight">
-                By placing this order, you request approval from the supplier. 
-                Payment and final invoice will be handled offline.
+              <p className="text-[11px] text-center text-gray-400 mt-2 leading-tight">
+                Placing this order sends a request to the supplier for approval.
               </p>
             </CardContent>
           </Card>

@@ -1,10 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import AccountForm from "../../components/account/AccountForm"; // Update import path if needed
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import AccountForm from "../../components/account/AccountForm"; 
+import BackButton from "../../components/BackButton";
 
 export default async function AccountSettingsPage() {
   const supabase = await createClient();
@@ -18,27 +15,33 @@ export default async function AccountSettingsPage() {
     .eq("id", user.id)
     .single();
 
-  if (!profile) {
-    return <div className="p-8 text-center">Profile not found.</div>;
-  }
+  if (!profile) redirect("/login");
 
   return (
-    <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 pb-20">
+    <div className="max-w-3xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 space-y-6">
       
-      {/* Back Button */}
-      <Button variant="ghost" asChild className="mb-4 pl-0 text-gray-500 hover:text-gray-900">
-        <Link href="/account">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back to Account
-        </Link>
-      </Button>
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <BackButton href="/account" label="Back to Hub" />
+        <div className="mt-1 sm:mt-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Account Settings</h1>
+          <p className="text-xs sm:text-sm text-gray-500">Manage your profile and delivery preferences.</p>
+        </div>
+      </div>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Profile Settings</h1>
-      
-      <Card className="shadow-sm border-gray-200">
-        <CardContent className="p-6">
+      {/* Main Form Container */}
+      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100 bg-gray-50/50">
+          <h2 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">
+            Profile Details
+          </h2>
+        </div>
+        
+        <div className="p-4 sm:p-6">
           <AccountForm user={profile} />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
     </div>
   );
 }

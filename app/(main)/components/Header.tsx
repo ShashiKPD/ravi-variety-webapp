@@ -131,7 +131,7 @@ export default function Header({
                   )}
                   
                   {userRole !== "anon" ? (
-                    <Link href="/account/settings">
+                    <Link href="/account/">
                       <UserAvatar />
                     </Link>
                   ) : (
