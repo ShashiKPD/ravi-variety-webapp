@@ -10,6 +10,7 @@ import { Save, Loader2, CheckCircle2 } from "lucide-react";
 import { updateProductQuick } from "@/app/(main)/admin/products/actions"; // Check path
 import BulkPricingManager from "../../../../components/product-form/BulkPricingManager"; // Import this
 import { toast } from "sonner";
+import AdminScannerInput from "@/components/scanner/AdminScannerInput";
 
 type ProductData = {
   id: number;
@@ -17,6 +18,8 @@ type ProductData = {
   sku: string;
   stock_quantity: number;
   is_featured: boolean;
+  pack_size: number;
+  barcode: string;
 };
 
 type PriceData = {
@@ -35,6 +38,8 @@ export default function QuickEditForm({ product, prices }: { product: ProductDat
     sku: product.sku,
     stock: product.stock_quantity,
     is_featured: product.is_featured,
+    pack_size: product.pack_size, 
+    barcode: product.barcode,
     price_retailer: prices.retailer,
     price_wholesaler: prices.wholesaler,
     mrp: prices.mrp,
@@ -55,6 +60,8 @@ export default function QuickEditForm({ product, prices }: { product: ProductDat
     payload.append("sku", formData.sku);
     payload.append("stock", String(formData.stock));
     if (formData.is_featured) payload.append("is_featured", "on");
+    payload.append("pack_size", String(formData.pack_size));
+    payload.append("barcode", formData.barcode);
     
     payload.append("price_retailer", String(formData.price_retailer));
     payload.append("price_wholesaler", String(formData.price_wholesaler));
@@ -123,6 +130,27 @@ export default function QuickEditForm({ product, prices }: { product: ProductDat
                 required 
                 className={inputClass}
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100 mt-4">
+              <div>
+                  <Label className="text-xs text-gray-500 uppercase font-bold tracking-wider">Barcode</Label>
+                  <AdminScannerInput
+                    value={formData.barcode}
+                    onChange={(val) => handleChange("barcode", val)}
+                    className={inputClass + " font-mono"}
+                    placeholder="Optional"
+                  />
+              </div>
+              <div>
+                  <Label className="text-xs text-blue-600 uppercase font-bold tracking-wider">Items / Pack</Label>
+                  <Input 
+                    type="number"
+                    min="1"
+                    value={formData.pack_size} 
+                    onChange={e => handleChange("pack_size", Number(e.target.value))} 
+                    className={inputClass}
+                  />
+              </div>
             </div>
           </div>
         </div>

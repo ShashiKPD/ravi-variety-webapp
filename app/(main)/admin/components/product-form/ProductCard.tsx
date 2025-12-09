@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Box, Copy, Trash2, ChevronDown, Tag } from "lucide-react";
+import { Box, Copy, Trash2, ChevronDown, Tag, PackageOpen } from "lucide-react";
 import { ProductInput } from "./types";
 import ImageManager from "./ImageManager";
 import BulkPricingManager from "./BulkPricingManager";
+import AdminScannerInput from "@/components/scanner/AdminScannerInput";
 
 type Props = {
   product: ProductInput;
@@ -165,6 +166,16 @@ export default function ProductCard({
               </div>
               
               <div className="space-y-1.5">
+                <Label className="text-xs text-gray-500 flex items-center gap-1">Barcode (Optional)</Label>
+                <AdminScannerInput
+                  value={product.barcode}
+                  onChange={(val) => onUpdate(product.id, 'barcode', val)}
+                  className="font-mono text-sm bg-white placeholder:text-xs"
+                  placeholder="EAN / UPC"
+                />
+              </div>
+              
+              <div className="space-y-1.5">
                 <Label className="text-xs text-gray-500">Stock Qty</Label>
                 <Input 
                   required type="number" 
@@ -198,7 +209,7 @@ export default function ProductCard({
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs text-gray-500">MRP / Display (₹)</Label>
+                <Label className="text-xs text-gray-500">MRP (Display) ₹</Label>
                 <Input 
                   required type="number" 
                   value={product.mrp} 
@@ -208,16 +219,38 @@ export default function ProductCard({
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs text-gray-500">Selling Unit</Label>
-                <Select value={product.unit_id || ""} onValueChange={(val) => onUpdate(product.id, 'unit_id', val)}>
-                  <SelectTrigger className="h-10 w-full bg-white text-xs sm:text-sm"><SelectValue placeholder="Select Unit" /></SelectTrigger>
-                  <SelectContent>
-                    {units.map((u) => (
-                      <SelectItem key={u.id} value={String(u.id)}>{u.name} ({u.short_name})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="col-span-2 grid grid-cols-2 gap-4 bg-white p-2 rounded border border-gray-100">
+                 <div className="space-y-1.5">
+                    <Label className="text-xs text-gray-500">Selling Unit</Label>
+                    <Select value={product.unit_id || ""} onValueChange={(val) => onUpdate(product.id, 'unit_id', val)}>
+                      <SelectTrigger className="h-9 w-full bg-gray-50 text-xs sm:text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent>
+                        {units.map((u) => (
+                          <SelectItem key={u.id} value={String(u.id)}>{u.name} ({u.short_name})</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                 </div>
+
+                 {/* NEW: Pack Size */}
+                 <div className="space-y-1.5">
+                    <Label className="text-xs text-blue-600 font-medium flex items-center gap-1">
+                       <PackageOpen className="w-3 h-3" /> Items per Unit
+                    </Label>
+                    <div className="relative">
+                       <Input 
+                         type="number" 
+                         min="1"
+                         value={product.pack_size} 
+                         onChange={e => onUpdate(product.id, 'pack_size', e.target.value)} 
+                         className="bg-blue-50/50 border-blue-100 text-sm h-9 placeholder:text-xs" 
+                         placeholder="1" 
+                       />
+                       <span className="absolute right-3 top-2.5 text-[10px] text-gray-400 pointer-events-none">
+                         pcs
+                       </span>
+                    </div>
+                 </div>
               </div>
 
             </div>

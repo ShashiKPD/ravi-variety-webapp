@@ -61,6 +61,8 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
           price_wholesaler: v.price_wholesaler || "",
           size_option: v.options?.size || "",
           unit_id: v.unit_id ? String(v.unit_id) : "", 
+          pack_size: v.pack_size ? String(v.pack_size) : "1", // Default "1"
+          barcode: v.barcode || "",
           is_featured: v.is_featured,
           images: [],
           previewUrls: v.image_urls || [],
@@ -72,6 +74,7 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
       id: Date.now(), isExpanded: true, name: "", description: "", sku: "", 
       stock: "", mrp: "", price_retailer: "", price_wholesaler: "", 
       size_option: "", unit_id: "", is_featured: false, 
+      pack_size: "1", barcode: "", // Default values
       images: [], previewUrls: [], bulkTiers: [] // <--- DEFAULT EMPTY
     }];
   };
@@ -88,6 +91,7 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
       description: prev.description || "", sku: "", stock: "", mrp: "", 
       price_retailer: "", price_wholesaler: "", size_option: "", 
       unit_id: prev.unit_id || "", 
+      pack_size: "1", barcode: "", // Default values
       is_featured: false, images: [], previewUrls: [], bulkTiers: [] 
     }]);
   };
@@ -157,6 +161,8 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
       mrp: p.mrp, price_retailer: p.price_retailer, price_wholesaler: p.price_wholesaler, 
       is_featured: p.is_featured, options: { size: p.size_option }, 
       unit_id: p.unit_id ? Number(p.unit_id) : null,
+      pack_size: p.pack_size ? Number(p.pack_size) : 1,
+      barcode: p.barcode,
       image_count: p.images.length,
       new_image_count: p.images.length, 
       existing_images: p.previewUrls.filter(url => url.startsWith("http")),

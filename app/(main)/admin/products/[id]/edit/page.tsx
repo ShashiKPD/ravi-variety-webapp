@@ -14,7 +14,7 @@ export default async function QuickEditPage({ params }: { params: Promise<{ id: 
   const { data: product, error } = await supabase
     .from("products")
     .select(`
-      id, name, sku, stock_quantity, is_featured, description, unit_id,
+      id, name, sku, stock_quantity, is_featured, description, unit_id, pack_size, barcode,
       product_groups ( id, name, brands(name) )
     `)
     .eq("id", id)
@@ -47,7 +47,9 @@ export default async function QuickEditPage({ params }: { params: Promise<{ id: 
     sku: product.sku,
     stock_quantity: product.stock_quantity,
     is_featured: product.is_featured,
-    description: product.description || ""
+    description: product.description || "",
+    pack_size: product.pack_size,
+    barcode:  product.barcode
   };
 
   const priceData = {

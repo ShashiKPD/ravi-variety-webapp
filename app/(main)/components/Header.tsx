@@ -8,10 +8,15 @@ import { Search, ShoppingCart, User as UserIcon, ChevronLeft } from "lucide-reac
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScanBarcode } from "lucide-react";
+import dynamic from "next/dynamic";
+
+const ScanToOrder = dynamic(() => import("@/components/scanner/ScanToOrder"), { ssr: false });
 
 function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
+  const [showScanner, setShowScanner] = useState(false);
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
@@ -32,6 +37,13 @@ function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
         className="w-full pl-9 h-10 bg-gray-100 border-none focus:ring-1 focus:ring-blue-500 font-normal shadow-inner rounded-full"
       />
        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+       <button 
+         type="button"
+         onClick={() => setShowScanner(true)}
+         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 p-1"
+       >
+         <ScanBarcode className="w-5 h-5" />
+       </button>
     </form>
   );
 }
@@ -50,7 +62,7 @@ export default function Header({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  
+
   const isContextPage = pathname?.startsWith("/p/") || pathname?.startsWith("/category/");
   const isAdminPage = pathname?.startsWith("/admin");
   const isAdmin = userRole === "admin";
