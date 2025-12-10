@@ -2,20 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
-import ProductCard from "./ProductCard";
-import { ProductSummary } from "@/lib/types";
+import ProductCard from "./product/ProductCard";
+import { ProductData } from "@/lib/types";
 import { getMoreProducts } from "@/app/actions/products";
 import { Loader2 } from "lucide-react";
 
 type Props = {
-  initialProducts: ProductSummary[];
-  userRole: string;
+  title: string; // <--- Added Title Prop
+  initialProducts: ProductData[];
   wishlistIds: Set<number>;
+  isLoggedIn: boolean;
 };
 
-export default function ProductInfiniteGrid({ initialProducts, userRole, wishlistIds }: Props) {
-  const [products, setProducts] = useState<ProductSummary[]>(initialProducts);
-  const [page, setPage] = useState(2); // Start fetching from page 2
+export default function ProductInfiniteGrid({ 
+  title, 
+  initialProducts, 
+  wishlistIds, 
+  isLoggedIn 
+}: Props) {
+  const [products, setProducts] = useState<ProductData[]>(initialProducts);
+  const [page, setPage] = useState(2);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const { ref, inView } = useInView();
@@ -25,7 +31,8 @@ export default function ProductInfiniteGrid({ initialProducts, userRole, wishlis
     setLoading(true);
     
     try {
-      const newProducts = await getMoreProducts(page, userRole);
+      // Fetching plain data (no role needed as per updated action)
+      const newProducts = await getMoreProducts(page);
       
       if (newProducts.length === 0) {
         setHasMore(false);
@@ -46,21 +53,21 @@ export default function ProductInfiniteGrid({ initialProducts, userRole, wishlis
     }
   }, [inView]);
 
-  const showInteractiveButtons = ["retailer", "wholesaler", "admin"].includes(userRole);
-
   return (
-    <section className="bg-white py-4 md:py-6">
+    <section className="bg-white py-4 md:py-6 border-t border-gray-100">
+      {/* Title Section (Matches ProductRail) */}
       <div className="px-4 mb-3">
-        <h2 className="text-lg md:text-xl font-bold text-gray-900">All Products</h2>
+        <h2 className="text-lg md:text-xl font-bold text-gray-900">{title}</h2>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-4 px-4">
+      {/* Grid Layout */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-4 px-4">
         {products.map((product, index) => (
-          <div key={`${product.variant_id}-${index}`} className="min-w-0">
+          <div key={`${product.id}-${index}`} className="min-w-0">
             <ProductCard
               product={product}
-              showInteractiveButtons={showInteractiveButtons}
-              isInitiallyWishlisted={wishlistIds.has(product.variant_id)}
+              isLoggedIn={isLoggedIn}
+              isWishlisted={wishlistIds.has(product.id)}
             />
           </div>
         ))}
@@ -68,14 +75,14 @@ export default function ProductInfiniteGrid({ initialProducts, userRole, wishlis
 
       {/* Loading Trigger */}
       {hasMore && (
-        <div ref={ref} className="flex justify-center p-8 w-full">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <div ref={ref} className="flex justify-center p-8 w-full mt-2">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 opacity-50" />
         </div>
       )}
       
-      {!hasMore && (
-        <div className="text-center p-8 text-gray-500 text-sm">
-          You've reached the end!
+      {!hasMore && products.length > 0 && (
+        <div className="text-center p-8 text-gray-400 text-xs uppercase tracking-widest mt-2">
+          — You've reached the end —
         </div>
       )}
     </section>

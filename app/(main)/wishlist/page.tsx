@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import ProductCard from "../components/ProductCard";
+import ProductCard from "../components/product/ProductCard";
 import { ProductSummary, ProductPrice } from "@/lib/types";
 
 export default async function WishlistPage() {

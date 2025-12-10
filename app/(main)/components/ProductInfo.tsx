@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import AddToCartButton from "./AddToCartButton";
+import AddToCartButton from "./product/AddToCartButton";
 import WishlistButton from "./WishlistButton";
 import { ProductPrice, PricingTier } from "@/lib/types";
 import { cn } from "@/lib/utils";

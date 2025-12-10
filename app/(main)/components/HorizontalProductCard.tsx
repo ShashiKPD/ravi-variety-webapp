@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import WishlistButton from "./WishlistButton";
-import AddToCartButton from "./AddToCartButton";
+import AddToCartButton from "./product/AddToCartButton";
 import { ProductSummary } from "@/lib/types";
 
 export default function HorizontalProductCard({

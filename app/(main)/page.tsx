@@ -5,10 +5,8 @@ import HeroCarousel from "./components/HeroCarousel";
 import SuperCategoryRail from "./components/SuperCategoryRail";
 import ProductRail from "./components/ProductRail";
 import ProductInfiniteGrid from "./components/ProductInfiniteGrid";
-import { ProductSummary, ProductPrice } from "@/lib/types";
 import { redirect } from "next/navigation";
 
-// Static Client Setup
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
@@ -32,33 +30,17 @@ const getCachedSupercategories = unstable_cache(
   { revalidate: 86400 }
 );
 
-async function fetchPricesForProducts(products: ProductSummary[], supabase: any, userRole: string) {
-  if (userRole === "anon" || products.length === 0) {
-    return products.map(p => ({ ...p, price_data: null }));
-  }
-
-  const promises = products.map(async (p) => {
-    const { data } = await supabase.rpc("get_price_for_variant", {
-      p_variant_id: p.variant_id,
-      p_quantity: 1,
-      p_user_role: userRole,
-    }).single();
-    return { ...p, price_data: data as ProductPrice | null };
-  });
-
-  return Promise.all(promises);
-}
-
 export default async function HomePage() {
   const supabase = await createClient();
 
+  // 1. Auth Check (For UI Logic Only)
   const { data: { user } } = await supabase.auth.getUser();
   let wishlistVariantIds = new Set<number>();
-  let userRole = "anon";
+  const isLoggedIn = !!user; // Pass this to child components
 
   if (user) {
     const [profileRes, wishlistRes] = await Promise.all([
-      supabase.from("profiles").select("role, is_active").eq("id", user.id).single(),
+      supabase.from("profiles").select("is_active").eq("id", user.id).single(),
       supabase.from("wishlist_items").select("product_id").eq("user_id", user.id),
     ]);
 
@@ -66,80 +48,84 @@ export default async function HomePage() {
       redirect("/auth/signout");
     }
 
-    userRole = profileRes.data?.role || "anon";
     if (wishlistRes.data) {
       wishlistVariantIds = new Set(wishlistRes.data.map((item) => item.product_id));
     }
   }
 
-  // UPDATED: Added 'newArrivalsRes' to the fetch list
-  const [featuredRes, supercategories, banners, recommendedRes, newArrivalsRes, allProductsRes] = await Promise.all([
-    supabase.rpc("get_homepage_featured").limit(8),
+  // 2. Data Fetching
+  // FIX: We do NOT pass p_user_role or p_user_id anymore.
+  // The database functions use auth.uid() and get_current_user_role() internally.
+  const [
+    featuredRes, 
+    supercategories, 
+    banners, 
+    recommendedRes, 
+    newArrivalsRes, 
+    allProductsRes
+  ] = await Promise.all([
+    supabase.rpc("get_homepage_featured", { p_limit: 8 }), // No Role param
     getCachedSupercategories(), 
-    getCachedBanners(),         
-    user ? supabase.rpc("get_recommended_products", { p_user_id: user.id, p_limit: 10 }) : Promise.resolve({ data: [] }),
-    supabase.rpc("get_new_arrivals", { p_limit: 10 }), // New Arrivals Call
-    supabase.rpc("get_all_products", { p_offset: 0, p_limit: 10 })
+    getCachedBanners(), 
+    // No ID/Role params. Returns empty array if auth.uid() is null internally.
+    supabase.rpc("get_recommended_products", { p_limit: 10 }), 
+    supabase.rpc("get_new_arrivals", { p_limit: 10 }), // No Role param
+    supabase.rpc("get_all_products", { p_limit: 10, p_offset: 0 }) // No Role param
   ]);
 
-  const featuredProducts = await fetchPricesForProducts((featuredRes.data as ProductSummary[]) || [], supabase, userRole);
-  const recommendedProducts = await fetchPricesForProducts((recommendedRes.data as ProductSummary[]) || [], supabase, userRole);
-  const newArrivals = await fetchPricesForProducts((newArrivalsRes.data as ProductSummary[]) || [], supabase, userRole);
-  const allProductsInitial = await fetchPricesForProducts((allProductsRes.data as ProductSummary[]) || [], supabase, userRole);
-  
+  const featuredProducts = featuredRes.data || [];
+  const recommendedProducts = recommendedRes.data || [];
+  const newArrivals = newArrivalsRes.data || [];
+  const allProductsInitial = allProductsRes.data || [];
+
   return (
-    <div className="bg-gray-100 min-h-screen pb-4">
+    <div className="bg-gray-50/30 min-h-screen pb-12">
       
       <SuperCategoryRail data={supercategories} />
 
       {user && banners.length > 0 && (
-        <HeroCarousel banners={banners} />
+           <HeroCarousel banners={banners} />
       )}
 
-      {/* Featured */}
-      <div className="">
+      {featuredProducts.length > 0 && (
         <ProductRail 
           title="Featured Products" 
           products={featuredProducts} 
           viewAllLink="/search?filter=featured"
-          userRole={userRole}
           wishlistIds={wishlistVariantIds}
+          isLoggedIn={isLoggedIn}
         />
-      </div>
+      )}
 
-      {/* Recommended */}
       {recommendedProducts.length > 0 && (
         <div className="mt-2">
           <ProductRail 
             title="Recommended For You" 
             products={recommendedProducts} 
-            userRole={userRole}
             wishlistIds={wishlistVariantIds}
+            isLoggedIn={isLoggedIn}
           />
         </div>
       )}
 
-      {/* NEW ARRIVALS */}
       {newArrivals.length > 0 && (
         <div className="mt-2">
           <ProductRail 
             title="New Arrivals" 
             products={newArrivals} 
-            viewAllLink="/search?sort=newest" // Link to search page sorted by date
-            userRole={userRole}
+            viewAllLink="/search?sort=newest" 
             wishlistIds={wishlistVariantIds}
+            isLoggedIn={isLoggedIn}
           />
         </div>
       )}
 
-      {/* All Products */}
-      <div className="mt-2">
-        <ProductInfiniteGrid 
-          initialProducts={allProductsInitial}
-          userRole={userRole}
-          wishlistIds={wishlistVariantIds}
-        />
-      </div>
+      <ProductInfiniteGrid 
+        title="Browse All"
+        initialProducts={allProductsInitial}
+        wishlistIds={wishlistVariantIds}
+        isLoggedIn={isLoggedIn}
+      />
 
     </div>
   );

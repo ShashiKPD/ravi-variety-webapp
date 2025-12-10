@@ -11,9 +11,10 @@ type Props = {
   productId: number;
   isInitiallyWishlisted: boolean;
   className?: string; // Added prop
+  isLoggedIn: boolean;
 };
 
-export default function WishlistButton({ productId, isInitiallyWishlisted, className }: Props) {
+export default function WishlistButton({ productId, isInitiallyWishlisted, className, isLoggedIn }: Props) {
   const [isWishlisted, setIsWishlisted] = useState(isInitiallyWishlisted);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -44,22 +45,24 @@ export default function WishlistButton({ productId, isInitiallyWishlisted, class
   };
 
   return (
-    <Button
-      variant="outline" // Changed to outline to match AddToCart style better when standalone
-      size="icon"
-      // Added className support
-      className={cn("rounded-full hover:bg-gray-100", className)}
-      onClick={handleToggle}
-      disabled={isLoading}
-    >
-      <Heart
-        className={cn(
-          "transition-all duration-200",
-          // Allow parent to control icon size via className, defaulting to standard if not
-          className?.includes("h-") ? "" : "h-5 w-5",
-          isWishlisted ? "fill-red-500 text-red-500 scale-110" : "text-gray-400 hover:text-gray-600"
-        )}
-      />
-    </Button>
+    isLoggedIn && (
+      <Button
+        variant="outline" // Changed to outline to match AddToCart style better when standalone
+        size="icon"
+        // Added className support
+        className={cn("rounded-full hover:bg-gray-100", className)}
+        onClick={handleToggle}
+        disabled={isLoading}
+      >
+        <Heart
+          className={cn(
+            "transition-all duration-200",
+            // Allow parent to control icon size via className, defaulting to standard if not
+            className?.includes("h-") ? "" : "h-5 w-5",
+            isWishlisted ? "fill-red-500 text-red-500 scale-110" : "text-gray-400 hover:text-gray-600"
+          )}
+        />
+      </Button>
+    )
   );
 }

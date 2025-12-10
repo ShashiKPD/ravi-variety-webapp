@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import ProductCard from "./ProductCard";
+import ProductCard from "./product/ProductCard";
 import { ProductSummary } from "@/lib/types";
 
 type ProductGridProps = {

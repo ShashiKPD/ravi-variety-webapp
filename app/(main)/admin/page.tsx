@@ -19,7 +19,9 @@ import {
   LayoutTemplate,
   Ruler,
   Layers,
-  ChevronRight
+  ChevronRight,
+  Percent, // <--- New Icon for Sales
+  Megaphone // Alternative Icon
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -29,16 +31,17 @@ export default async function AdminDashboard() {
   if (!user) redirect("/login");
 
   // Only fetch actionable data
-  const [pendingOrdersRes, lowStockRes] = await Promise.all([
+  const [pendingOrdersRes, lowStockRes, activeSalesRes] = await Promise.all([
     supabase.from("orders").select("*", { count: "exact", head: true }).eq("status", "pending"),
-    supabase.from("products").select("*", { count: "exact", head: true }).lt("stock_quantity", 10)
+    supabase.from("products").select("*", { count: "exact", head: true }).lt("stock_quantity", 10),
+    supabase.from("sales").select("*", { count: "exact", head: true }).eq("is_active", true) // Count active sales
   ]);
 
   const pendingCount = pendingOrdersRes.count || 0;
   const lowStockCount = lowStockRes.count || 0;
+  const activeSalesCount = activeSalesRes.count || 0;
 
   // Shared classes for mobile-friendly buttons
-  // active:scale-95 gives a "press" effect on touch devices
   const btnClass = "w-full justify-between active:scale-95 transition-all duration-200";
 
   return (
@@ -77,7 +80,7 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* 2. INVENTORY */}
+        {/* 3. INVENTORY */}
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex justify-between items-start">
@@ -104,37 +107,32 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* 3. CATALOG CONFIG (Updated Layout) */}
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        {/* 2. SALES & CAMPAIGNS (New Card) */}
+        <Card className="border-l-4 border-l-red-500 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Tags className="w-5 h-5 text-gray-600" />
-              Taxonomy
-            </CardTitle>
-            <CardDescription>Categories & Brands.</CardDescription>
+            <div className="flex justify-between items-start">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Percent className="w-5 h-5 text-red-500" />
+                Sales
+              </CardTitle>
+              {activeSalesCount > 0 && (
+                <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-red-200 shadow-none">
+                  {activeSalesCount} Active
+                </Badge>
+              )}
+            </div>
+            <CardDescription>Manage events & discounts.</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-             {/* Vertical stack is easier to tap on mobile */}
-             <Button asChild variant="outline" className={btnClass}>
-               <Link href="/admin/categories/new">
-                 Categories <ChevronRight className="w-4 h-4 text-gray-400" />
-               </Link>
-             </Button>
-             <Button asChild variant="outline" className={btnClass}>
-               <Link href="/admin/brands/new">
-                 Brands <ChevronRight className="w-4 h-4 text-gray-400" />
-               </Link>
-             </Button>
-             {/* Supercategories is now a standard button */}
-             <Button asChild variant="outline" className={btnClass}>
-              <Link href="/admin/supercategories/new">
-                Supercategories <Layers className="w-4 h-4 text-gray-400" />
+          <CardContent>
+            <Button asChild className={`${btnClass} bg-gray-900 text-white hover:bg-gray-800`}>
+              <Link href="/admin/sales">
+                 Manage Campaigns <ChevronRight className="w-4 h-4 opacity-50" />
               </Link>
             </Button>
           </CardContent>
         </Card>
 
-        {/* 4. USERS */}
+        {/* 5. USERS */}
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -152,7 +150,35 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* 5. CONTENT */}
+        {/* 4. CATALOG CONFIG */}
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Tags className="w-5 h-5 text-gray-600" />
+              Taxonomy
+            </CardTitle>
+            <CardDescription>Categories & Brands.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+             <Button asChild variant="outline" className={btnClass}>
+               <Link href="/admin/categories/new">
+                 Categories <ChevronRight className="w-4 h-4 text-gray-400" />
+               </Link>
+             </Button>
+             <Button asChild variant="outline" className={btnClass}>
+               <Link href="/admin/brands/new">
+                 Brands <ChevronRight className="w-4 h-4 text-gray-400" />
+               </Link>
+             </Button>
+             <Button asChild variant="outline" className={btnClass}>
+              <Link href="/admin/supercategories/new">
+                Supercategories <Layers className="w-4 h-4 text-gray-400" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* 6. CONTENT */}
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -170,7 +196,7 @@ export default async function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* 6. CONFIGURATION */}
+        {/* 7. CONFIGURATION */}
         <Card className="shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-gray-400">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">

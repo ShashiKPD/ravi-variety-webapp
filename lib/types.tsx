@@ -20,3 +20,19 @@ export interface PricingTier {
   unit_price: number;
   mrp: number; // Added this
 }
+export interface ProductData {
+  id: number;
+  name: string;
+  slug: string;
+  image_url: string | null;
+  in_stock: boolean;
+  pack_size: number;
+  unit_name: string;
+  // Pricing
+  final_price: number;
+  original_price: number;
+  mrp: number;
+  price_source: 'standard' | 'bulk' | 'sale'; // <--- The decision flag
+  discount_label: string | null;
+  savings_percentage: number;
+}
