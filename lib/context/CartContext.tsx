@@ -16,10 +16,10 @@ type CartContextType = {
   addToCart: (item: LocalCartItem) => void;
   updateQty: (id: number, delta: number) => void;
   clearCart: () => void;
-  replaceCart: (items: LocalCartItem[]) => void; // <--- NEW
+  replaceCart: (items: LocalCartItem[]) => void;
   cartCount: number;
   cartTotal: number;
-  isLoaded: boolean; // <--- NEW
+  isLoaded: boolean;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -38,12 +38,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error("Failed to parse cart", e);
       }
     }
-    setIsLoaded(true); // <--- Flag ready
+    setIsLoaded(true);
   }, []);
 
-  // 2. Save to LocalStorage
+  // 2. Save to LocalStorage (FIXED)
   useEffect(() => {
     if (isLoaded) {
+      const prevStorage = localStorage.getItem("local_cart");
+      
+      // LOGIC FIX: 
+      // If the cart is empty AND we have no history in storage, DO NOT write.
+      // This keeps the "New Device" state distinguishable from "Cleared Cart".
+      if (items.length === 0 && prevStorage === null) {
+        return;
+      }
+      
       localStorage.setItem("local_cart", JSON.stringify(items));
     }
   }, [items, isLoaded]);
@@ -73,12 +82,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = () => {
     setItems([]);
+    // We explicitly set it to empty array string so history is preserved
     if (typeof window !== "undefined") {
-      localStorage.removeItem("local_cart");
+      localStorage.setItem("local_cart", "[]"); 
     }
   };
 
-  // New helper to hydrate from Server
   const replaceCart = (newItems: LocalCartItem[]) => {
     setItems(newItems);
   };

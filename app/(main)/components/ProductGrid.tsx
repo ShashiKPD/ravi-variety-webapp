@@ -1,15 +1,15 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import ProductCard from "./product/ProductCard";
-import { ProductSummary } from "@/lib/types";
+import ProductCard from "@/app/(main)/components/product/ProductCard"; // Updated path
+import { ProductData } from "@/lib/types"; // Updated type
 
 type ProductGridProps = {
-  products: ProductSummary[];
+  products: ProductData[]; // Changed from ProductSummary
   totalCount: number;
   currentPage: number;
   limit?: number;
-  showInteractiveButtons: boolean;
+  isLoggedIn: boolean; // Renamed for clarity
   wishlistVariantIds: Set<number>;
   currentParams: { [key: string]: string | string[] | undefined };
   clearFiltersHref: string;
@@ -20,7 +20,7 @@ export default function ProductGrid({
   totalCount,
   currentPage,
   limit = 20,
-  showInteractiveButtons,
+  isLoggedIn,
   wishlistVariantIds,
   currentParams,
   clearFiltersHref
@@ -41,22 +41,16 @@ export default function ProductGrid({
   }
 
   return (
-    // Added pb-24 to prevent bottom nav overlap on mobile
     <div className="flex flex-col gap-6 pb-24">
       
-      {/* GRID LAYOUT:
-        - Mobile: grid-cols-2 (Vertical layout enforced by ProductCard design)
-        - Tablet: grid-cols-3
-        - Desktop: grid-cols-4 
-        - Gap: gap-2 (Clean separation between cards)
-      */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-1 sm:gap-2 md:gap-4">
+      {/* GRID LAYOUT */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-2 md:gap-4">
         {products.map((product) => (
           <ProductCard
-            key={product.variant_id}
+            key={product.id}
             product={product}
-            showInteractiveButtons={showInteractiveButtons}
-            isInitiallyWishlisted={wishlistVariantIds.has(product.variant_id)}
+            isLoggedIn={isLoggedIn}
+            isWishlisted={wishlistVariantIds.has(product.id)}
           />
         ))}
       </div>

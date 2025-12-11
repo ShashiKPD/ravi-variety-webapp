@@ -38,19 +38,29 @@ function LoginForm() {
       setLoading(false);
     } else {
       const { data: { user } } = await supabase.auth.getUser();
+      
       if (user) {
+        // 1. Check for 'next' param (e.g. /orders/ORD-123)
+        const nextUrl = searchParams.get("next");
+        const safeNextUrl = nextUrl && nextUrl.startsWith("/") ? nextUrl : null;
+
+        // 2. Fetch Profile for Role checks
         const { data: profile } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", user.id)
           .single();
 
-        if (profile?.role === "admin") {
+        // 3. Determine Redirect Destination
+        if (safeNextUrl) {
+          router.push(safeNextUrl);
+        } else if (profile?.role === "admin") {
           router.push("/admin");
         } else {
           router.push("/");
         }
       } else {
+        // Fallback (should theoretically not happen if authError was null)
         router.push("/");
       }
     }

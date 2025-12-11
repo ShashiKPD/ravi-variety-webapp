@@ -1,112 +1,80 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import ProductCard from "../components/product/ProductCard";
-import { ProductSummary, ProductPrice } from "@/lib/types";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Heart } from "lucide-react";
+// Correct Import Path
+import ProductCard from "@/app/(main)/components/product/ProductCard";
+import { ProductData } from "@/lib/types";
 
 export default async function WishlistPage() {
   const supabase = await createClient();
 
-  // 1. Get User
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    redirect("/login");
+    redirect("/login?next=/wishlist");
   }
 
-  // 2. Get User Role (For pricing)
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-  const userRole = profile?.role || "retailer";
+  const { data: items, error } = await supabase.rpc("get_wishlist_details");
 
-  // 3. Get Wishlisted Variant IDs
-  const { data: wishlistItems } = await supabase
-    .from("wishlist_items")
-    .select("product_id") // In DB schema, product_id FK points to products (variants)
-    .eq("user_id", user.id);
+  if (error) {
+    console.error("Wishlist RPC Error:", error);
+  }
 
-  if (!wishlistItems || wishlistItems.length === 0) {
+  // 3. Transform to ProductData interface
+  const products: ProductData[] = (items || []).map((item: any) => ({
+    id: item.variant_id, // <--- Maps correctly now
+    name: item.name,
+    slug: item.slug,
+    image_url: item.image_url,
+    in_stock: item.in_stock,
+    pack_size: item.pack_size,
+    unit_name: item.unit_name,
+    variant_name: item.variant_name,
+    final_price: item.final_price,
+    original_price: item.original_price,
+    mrp: item.mrp,
+    price_source: item.price_source,
+    discount_label: item.discount_label,
+    savings_percentage: item.savings_percentage
+  }));
+
+  if (!products || products.length === 0) {
     return (
-      <div className="bg-gray-50 min-h-screen">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">My Wishlist</h1>
-          <div className="p-12 text-center border rounded-lg bg-white border-dashed border-gray-300">
-             <p className="text-gray-500">Your wishlist is empty.</p>
-          </div>
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center bg-gray-50">
+        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
+          <Heart className="w-8 h-8 text-gray-300 fill-gray-50" />
         </div>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">Your wishlist is empty</h1>
+        <p className="text-gray-500 mb-6 text-sm max-w-xs mx-auto">
+          Save items you want to buy later by clicking the heart icon.
+        </p>
+        <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-8">
+          <Link href="/">Browse Products</Link>
+        </Button>
       </div>
     );
   }
 
-  const variantIds = wishlistItems.map((item) => item.product_id);
-
-  // 4. Fetch Products (Variants) + Group Info
-  // We use !inner join to ensure we only get valid data
-  const { data: productsData } = await supabase
-    .from("products")
-    .select(`
-      id,
-      name,
-      slug,
-      image_urls,
-      stock_quantity,
-      options,
-      product_groups (
-        id,
-        name
-      )
-    `)
-    .in("id", variantIds);
-
-  // 5. Fetch Prices (Bulk fetch for efficiency)
-  const { data: pricesData } = await supabase
-    .from("price_tiers")
-    .select("product_id, unit_price, mrp, sale_price")
-    .eq("role", userRole)
-    .eq("min_quantity", 1) // Base price
-    .in("product_id", variantIds);
-
-  // 6. Map to ProductSummary
-  const products: ProductSummary[] = (productsData || []).map((p: any) => {
-    // Find matching price
-    const priceObj = pricesData?.find(price => price.product_id === p.id);
-    
-    const priceData: ProductPrice | null = priceObj ? {
-       unit_price: priceObj.unit_price,
-       mrp: priceObj.mrp,
-       sale_price: priceObj.sale_price
-    } : null;
-
-    // Determine variant name (use "Size" option if available, else Name)
-    // Note: p.options is JSONB. Safely access it.
-    const variantName = p.options?.size || p.name; 
-
-    return {
-      variant_id: p.id,
-      variant_name: variantName, 
-      product_id: p.product_groups?.id, 
-      product_name: p.product_groups?.name || p.name, 
-      product_slug: p.slug,
-      thumbnail_url: p.image_urls?.[0] || null,
-      stock_quantity: p.stock_quantity,
-      price_data: priceData
-    };
-  });
-
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
-      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">My Wishlist</h1>
+      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+        
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">
+            My Wishlist <span className="text-gray-400 font-normal text-lg">({products.length})</span>
+          </h1>
+        </div>
         
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {products.map((product) => (
-            <ProductCard
-              key={product.variant_id}
-              product={product}
-              showInteractiveButtons={true}
-              isInitiallyWishlisted={true} // Items on this page are by definition wishlisted
-            />
+            <div key={product.id} className="h-full">
+              <ProductCard
+                product={product}
+                isLoggedIn={true}
+                isWishlisted={true}
+              />
+            </div>
           ))}
         </div>
       </div>

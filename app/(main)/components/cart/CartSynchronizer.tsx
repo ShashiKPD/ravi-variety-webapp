@@ -9,7 +9,6 @@ import { Loader2 } from "lucide-react";
 type ServerItem = {
   product_id: number;
   quantity: number;
-  // We need these to hydrate local state if it's empty
   name?: string;
   image_url?: string | null;
   unit_price?: number; 
@@ -26,27 +25,31 @@ export default function CartSynchronizer({ serverItems }: Props) {
   const [isSyncing, setIsSyncing] = useState(false);
   const hasChecked = useRef(false);
 
-  // 1. SCROLL TO TOP ON MOUNT
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  // 2. SYNC LOGIC
   useEffect(() => {
-    // CRITICAL: Wait for LocalStorage to load before deciding anything
     if (!isLoaded || hasChecked.current) return;
     
     const needsSync = () => {
       // CASE A: Server has items, Local is empty.
-      // This means "Fresh Session" or "New Device". 
-      // We should PULL server data -> Local. (Prevent Wipe)
       if (serverItems.length > 0 && localItems.length === 0) {
-        return "PULL";
+        
+        // FIX: Check if we have local history
+        // If "local_cart" exists in storage (even as "[]"), the user actively cleared it.
+        const hasLocalHistory = typeof window !== 'undefined' && localStorage.getItem("local_cart") !== null;
+
+        if (hasLocalHistory) {
+          // User cleared the cart locally. We must wipe the server too.
+          return "PUSH";
+        } else {
+          // No local history. User is on a new device. Restore from server.
+          return "PULL";
+        }
       }
 
-      // CASE B: Local has items.
-      // We assume Local is the source of truth for an active session.
-      // We check if it differs from server.
+      // CASE B: Standard Mismatch Check
       if (serverItems.length !== localItems.length) return "PUSH";
 
       for (const local of localItems) {
@@ -73,14 +76,12 @@ export default function CartSynchronizer({ serverItems }: Props) {
       performPush();
 
     } else if (action === "PULL") {
-      // Hydrate Local from Server
-      // We map the rich server data back to the simple local format
       const hydratedItems: LocalCartItem[] = serverItems.map(s => ({
         id: s.product_id,
         qty: s.quantity,
-        name: s.name || "Product", // Fallback if not passed (handled in page)
+        name: s.name || "Product", 
         image_url: s.image_url || null,
-        pack_size: 1, // Server RPC should ideally return this, but 1 is safe default for hydration
+        pack_size: 1, 
         price: s.unit_price || 0
       }));
       
@@ -88,7 +89,6 @@ export default function CartSynchronizer({ serverItems }: Props) {
       hasChecked.current = true;
       
     } else {
-      // Match!
       hasChecked.current = true;
     }
 

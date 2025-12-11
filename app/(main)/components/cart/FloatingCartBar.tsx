@@ -20,6 +20,7 @@ export default function FloatingCartBar() {
     pathname === "/" || 
     pathname.startsWith("/p/") || 
     pathname.startsWith("/categories") || 
+    pathname.startsWith("/category") || 
     pathname.startsWith("/search");
 
   // Reset sync state if we navigated away
@@ -101,7 +102,7 @@ export default function FloatingCartBar() {
     <div className={cn(
       "fixed left-0 right-0 z-50 flex justify-center pointer-events-none transition-all duration-300",
       // Mobile: bottom-24 (Clear Nav) | Desktop: bottom-6
-      "bottom-24 md:bottom-6"
+      "bottom-20 md:bottom-6"
     )}>
       <button 
         onClick={handleViewCart}

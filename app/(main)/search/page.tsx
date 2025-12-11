@@ -1,44 +1,16 @@
 import { createClient } from "@/utils/supabase/server";
-import SearchFilters from "../components/search/SearchFilters";
-import { ProductSummary, ProductPrice } from "@/lib/types";
-import ProductGrid from "../components/ProductGrid"; // Import new component
+import SearchFilters from "@/app/(main)/components/search/SearchFilters";
+import ProductGrid from "@/app/(main)/components/ProductGrid";
+import { ProductData } from "@/lib/types";
 
 type SearchPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-async function fetchPricesForResults(products: any[], supabase: any, userRole: string) {
-  if (!userRole || userRole === "anon" || products.length === 0) {
-    return products.map(p => ({ ...p, price_data: null })) as ProductSummary[];
-  }
-
-  const promises = products.map(async (p) => {
-    const { data } = await supabase.rpc("get_price_for_variant", {
-      p_variant_id: p.variant_id,
-      p_quantity: 1,
-      p_user_role: userRole,
-    }).single();
-    
-    return {
-      variant_id: p.variant_id,
-      variant_name: p.variant_name,
-      product_id: p.product_id,
-      product_name: p.product_name,
-      product_slug: p.product_slug,
-      thumbnail_url: p.thumbnail_url,
-      stock_quantity: p.stock_quantity,
-      price_data: data as ProductPrice | null
-    } as ProductSummary;
-  });
-
-  return Promise.all(promises);
-}
-
 export default async function SearchPage({ searchParams }: SearchPageProps) {
   const supabase = await createClient();
   const params = await searchParams;
 
-  // 1. Get User Role
   const { data: { user } } = await supabase.auth.getUser();
   let userRole = "anon";
   let wishlistVariantIds = new Set<number>();
@@ -50,77 +22,106 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     ]);
     userRole = profileRes.data?.role || "anon";
     if (wishlistRes.data) {
-      wishlistVariantIds = new Set(wishlistRes.data.map(i => i.product_id));
+      wishlistVariantIds = new Set(wishlistRes.data.map((i: any) => i.product_id));
     }
   }
 
-  // 2. Parse Params
   const query = typeof params.q === "string" ? params.q : "";
   const page = Number(params.page) || 1;
   const sort = typeof params.sort === "string" ? params.sort : "newest";
   const limit = 20;
 
-  const brandIds = typeof params.brands === "string" ? params.brands.split(",").map(Number) : null;
-  const categoryIds = typeof params.categories === "string" ? params.categories.split(",").map(Number) : null;
+  const brandSlugs = typeof params.brands === "string" ? params.brands.split(",") : null;
+  const categorySlugs = typeof params.categories === "string" ? params.categories.split(",") : null;
+  
   const sizeFilters = typeof params.sizes === "string" ? params.sizes.split(",") : null;
   const minPrice = params.min_price ? Number(params.min_price) : null;
   const maxPrice = params.max_price ? Number(params.max_price) : null;
+  const inStock = params.stock === 'true';
 
-  // 3. Fetch Data
   const [searchResults, categoriesRes, brandsRes, sizesRes] = await Promise.all([
     supabase.rpc("search_products", {
       p_search_text: query || null,
-      p_brand_ids: brandIds,
-      p_category_ids: categoryIds,
+      p_supercategory_slug: null,
+      p_category_slugs: categorySlugs,
+      p_brand_slugs: brandSlugs,
       p_sizes: sizeFilters,
       p_min_price: minPrice,
       p_max_price: maxPrice,
+      p_in_stock: inStock ? true : null,
       p_sort_by: sort,
       p_page: page,
       p_limit: limit
     }),
-    supabase.from("categories").select("id, name").order("name"),
-    supabase.from("brands").select("id, name").order("name"),
+    supabase.from("categories").select("id, name, slug").order("name"),
+    supabase.from("brands").select("id, name, slug").order("name"),
     supabase.rpc("get_distinct_product_sizes")
   ]);
 
-  const availableSizes = sizesRes.data?.map((s: { size: string }) => s.size) || [];
-  const productsRaw = searchResults.data || [];
-  const totalCount = productsRaw[0]?.total_count || 0;
-  const totalPages = Math.ceil(Number(totalCount) / limit);
+  const rawProducts = searchResults.data || [];
+  const totalCount = rawProducts[0]?.total_count || 0;
+  const availableSizes = sizesRes.data?.map((s: any) => s.size) || [];
 
-  // 4. Hydrate Prices
-  const products = await fetchPricesForResults(productsRaw, supabase, userRole);
-  const showInteractiveButtons = ["retailer", "wholesaler", "admin"].includes(userRole);
+  const products: ProductData[] = rawProducts.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    image_url: p.image_url,
+    in_stock: p.in_stock,
+    pack_size: p.pack_size,
+    unit_name: p.unit_name,
+    variant_name: p.variant_name,
+    final_price: p.final_price,
+    original_price: p.original_price,
+    mrp: p.mrp,
+    price_source: p.price_source,
+    discount_label: p.discount_label,
+    savings_percentage: p.savings_percentage
+  }));
+
+  const isLoggedIn = ["retailer", "wholesaler", "admin"].includes(userRole);
+
+  let pageTitle = "All Products";
+  if (query) {
+    pageTitle = `Results for "${query}"`;
+  } else if (brandSlugs && brandSlugs.length === 1) {
+    const brandName = brandsRes.data?.find((b) => b.slug === brandSlugs[0])?.name;
+    if (brandName) pageTitle = brandName;
+  } else if (categorySlugs && categorySlugs.length === 1) {
+    const catName = categoriesRes.data?.find((c) => c.slug === categorySlugs[0])?.name;
+    if (catName) pageTitle = catName;
+  }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 py-8">
+    // Reduced padding: px-2 sm:px-4, py-4 sm:py-6
+    <div className="max-w-[1600px] mx-auto px-3 sm:px-4 py-4 sm:py-6">
       
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {query ? `Results for "${query}"` : "All Products"}
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
+      {/* Header: Tighter spacing */}
+      <div className="mb-4 border-b border-gray-100 pb-3">
+        {/* Responsive text size: smaller on mobile */}
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{pageTitle}</h1>
+        <p className="text-xs sm:text-sm text-gray-500 mt-1">
           Showing {products.length} of {Number(totalCount)} items
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-2">
-        <SearchFilters 
-          categories={categoriesRes.data || []} 
-          brands={brandsRes.data || []} 
-          sizes={availableSizes} 
-        />
+      {/* Content Gap: Reduced on mobile */}
+      <div className="flex flex-col md:flex-row gap-4 lg:gap-6">
+        <aside className="w-full md:w-[260px] lg:w-[260px] shrink-0">
+          <SearchFilters 
+            categories={categoriesRes.data || []} 
+            brands={brandsRes.data || []} 
+            sizes={availableSizes} 
+          />
+        </aside>
 
-        <div className="flex-1">
-          {/* REPLACED HUGE BLOCK WITH THIS: */}
+        <div className="flex-1 min-w-0">
           <ProductGrid 
             products={products}
             totalCount={Number(totalCount)}
             currentPage={page}
             limit={limit}
-            showInteractiveButtons={showInteractiveButtons}
+            isLoggedIn={isLoggedIn}
             wishlistVariantIds={wishlistVariantIds}
             currentParams={params}
             clearFiltersHref="/search"
