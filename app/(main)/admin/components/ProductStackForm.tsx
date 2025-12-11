@@ -13,7 +13,7 @@ import { toast } from "sonner";
 
 type Props = {
   categories: { id: number; name: string }[];
-  brands: { id: number; name: string }[];
+  brands: { id: number; name: string; categoryIds: number[] }[];
   existingGroups: ExistingGroup[];
   units: { id: number; name: string; short_name: string }[]; 
   initialData?: {

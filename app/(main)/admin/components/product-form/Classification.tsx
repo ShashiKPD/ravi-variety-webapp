@@ -1,15 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Layers, Box } from "lucide-react";
-import { ExistingGroup } from "./types";
+import { Search, Layers, Box, FilterX } from "lucide-react"; // Added FilterX icon
+import { ExistingGroup } from "./types"; // Adjust import path if needed
 
 type Props = {
   mode: 'new' | 'existing';
-  brands: { id: number; name: string }[];
+  
+  // UPDATED: Include categoryIds
+  brands: { id: number; name: string; categoryIds: number[] }[];
+  
   categories: { id: number; name: string }[];
   existingGroups: ExistingGroup[];
   brandId: string;
@@ -27,13 +30,43 @@ export default function Classification({
 }: Props) {
   const [searchTerm, setSearchTerm] = useState("");
 
+  // --- FILTERING LOGIC ---
+
+  // 1. Filter Categories based on selected Brand
+  const filteredCategories = useMemo(() => {
+    if (!brandId) return categories;
+    const selectedBrand = brands.find(b => String(b.id) === brandId);
+    if (!selectedBrand) return categories;
+    
+    // Return only categories linked to this brand
+    return categories.filter(c => selectedBrand.categoryIds.includes(c.id));
+  }, [brandId, brands, categories]);
+
+  // 2. Filter Brands based on selected Category
+  const filteredBrands = useMemo(() => {
+    if (!categoryId) return brands;
+    // Return only brands that have this category ID
+    return brands.filter(b => b.categoryIds.includes(Number(categoryId)));
+  }, [categoryId, brands]);
+
+  // Reset Logic: If a user changes Brand, and the currently selected Category 
+  // is NOT available for that brand, clear the Category selection.
+  useEffect(() => {
+    if (brandId && categoryId) {
+      const isValid = filteredCategories.some(c => String(c.id) === categoryId);
+      if (!isValid) setCategoryId("");
+    }
+  }, [brandId, filteredCategories, categoryId, setCategoryId]);
+
+
+  // --- SEARCH LOGIC (Existing) ---
   const filteredGroups = useMemo(() => {
     if (!searchTerm) return [];
     const lowerTerm = searchTerm.toLowerCase();
     
     return existingGroups.filter(g => 
       g.name.toLowerCase().includes(lowerTerm) || 
-      g.brandName.toLowerCase().includes(lowerTerm) ||
+      g.brandName?.toLowerCase().includes(lowerTerm) ||
       g.skus.toLowerCase().includes(lowerTerm) 
     ).slice(0, 5);
   }, [searchTerm, existingGroups]);
@@ -50,24 +83,55 @@ export default function Classification({
       <div className="p-4 sm:p-6">
         {mode === 'new' ? (
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+             
+             {/* Brand Select */}
              <div className="space-y-2">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</Label>
-                <Select value={brandId} onValueChange={setBrandId}>
-                  <SelectTrigger className="w-full bg-white text-sm"><SelectValue placeholder="Select Brand" /></SelectTrigger>
-                  <SelectContent>
-                    {brands.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+               <div className="flex justify-between">
+                 <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Brand</Label>
+                 {brandId && (
+                   <button type="button" onClick={() => setBrandId("")} className="text-[10px] text-red-500 flex items-center hover:underline">
+                     <FilterX className="w-3 h-3 mr-1" /> Clear
+                   </button>
+                 )}
+               </div>
+               <Select value={brandId} onValueChange={setBrandId}>
+                 <SelectTrigger className="w-full bg-white text-sm">
+                   <SelectValue placeholder="Select Brand" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {filteredBrands.length > 0 ? (
+                     filteredBrands.map(b => <SelectItem key={b.id} value={String(b.id)}>{b.name}</SelectItem>)
+                   ) : (
+                     <div className="p-2 text-xs text-gray-400 text-center">No brands for this category</div>
+                   )}
+                 </SelectContent>
+               </Select>
              </div>
+
+             {/* Category Select */}
              <div className="space-y-2">
-                <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Category</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="w-full bg-white text-sm"><SelectValue placeholder="Select Category" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+               <div className="flex justify-between">
+                 <Label className="text-xs font-medium text-gray-500 uppercase tracking-wider">Category</Label>
+                 {categoryId && (
+                   <button type="button" onClick={() => setCategoryId("")} className="text-[10px] text-red-500 flex items-center hover:underline">
+                     <FilterX className="w-3 h-3 mr-1" /> Clear
+                   </button>
+                 )}
+               </div>
+               <Select value={categoryId} onValueChange={setCategoryId}>
+                 <SelectTrigger className="w-full bg-white text-sm">
+                   <SelectValue placeholder="Select Category" />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {filteredCategories.length > 0 ? (
+                     filteredCategories.map(c => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)
+                   ) : (
+                     <div className="p-2 text-xs text-gray-400 text-center">No categories linked to this brand</div>
+                   )}
+                 </SelectContent>
+               </Select>
              </div>
+
            </div>
         ) : (
            <div className="space-y-4 max-w-2xl">
@@ -90,8 +154,8 @@ export default function Classification({
                          key={g.id} 
                          type="button"
                          onClick={() => {
-                            setSelectedGroupId(String(g.id));
-                            setSearchTerm(g.name);
+                           setSelectedGroupId(String(g.id));
+                           setSearchTerm(g.name);
                          }}
                          className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-0 transition-colors group"
                        >

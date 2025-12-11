@@ -1,29 +1,36 @@
 "use client";
 
-import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { addToCart, updateQuantity } from "@/app/(main)/cart/actions";
-import { Loader2, Plus, Minus, ShoppingCart } from "lucide-react";
+import { Loader2, Plus, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useCart } from "@/lib/context/CartContext";
 
 type Props = {
   productId: number;
-  inStock: boolean; // <--- Changed
-  initialQty?: number;
-  className?: string;
+  inStock: boolean;
   packSize?: number;
+  className?: string;
+  // New props needed for Local Cart Context
+  name: string;
+  imageUrl: string | null;
+  price: number;
 };
 
 export default function AddToCartButton({
   productId,
   inStock,
-  initialQty = 0,
-  className,
   packSize = 1,
+  className,
+  name,
+  imageUrl,
+  price,
 }: Props) {
-  const [isPending, startTransition] = useTransition();
-  const [qty, setQty] = useState(initialQty);
+  // 1. Hook into Global State
+  const { items, addToCart, updateQty } = useCart();
+  
+  // 2. Check current state in context
+  const cartItem = items.find(i => i.id === productId);
+  const qty = cartItem ? cartItem.qty : 0;
 
   const handleAddClick = (e: React.MouseEvent) => {
     e.preventDefault(); 
@@ -31,92 +38,75 @@ export default function AddToCartButton({
 
     if (!inStock) return;
 
-    // Optimistic: Set to 1
-    setQty(1);
-    
-    startTransition(async () => {
-      const res = await addToCart(productId, 1);
-      if (res?.error) {
-        toast.error(res.error);
-        setQty(0); // Revert
-      } else {
-        toast.success(packSize > 1 ? `Added pack of ${packSize}` : "Added to cart");
-      }
+    // Instant Local Update
+    addToCart({
+      id: productId,
+      qty: 1,
+      name,
+      image_url: imageUrl,
+      pack_size: packSize,
+      price
     });
   };
 
   const handleUpdateQty = (e: React.MouseEvent, delta: number) => {
     e.preventDefault();
     e.stopPropagation();
-
-    const newQty = qty + delta;
-    if (newQty < 0) return; // Cannot go below 0
-
-    // Optimistic Update
-    setQty(newQty);
-
-    startTransition(async () => {
-      const res = await updateQuantity(productId, newQty);
-      if (res?.error) {
-        // If server says "Insufficient Stock", we revert
-        toast.error(res.error);
-        setQty(qty); // Revert to previous valid qty
-      }
-    });
+    updateQty(productId, delta);
   };
 
+  // --- COMPACT COUNTER STATE ---
   if (qty > 0) {
     return (
       <div 
         className={cn(
-          "flex items-center justify-between h-9 bg-blue-600 text-white rounded-lg shadow-md overflow-hidden touch-manipulation", 
-          className
+          "flex items-center h-8 bg-blue-600 shadow-md overflow-hidden touch-manipulation", 
+          className // Allows overriding width/rounding from parent
         )}
         onClick={(e) => e.preventDefault()}
       >
         <button
           onClick={(e) => handleUpdateQty(e, -1)}
-          disabled={isPending}
-          className="h-full w-9 flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50"
+          // w-8 ensures a good touch target, flex-none prevents squishing
+          className="h-full w-8 flex-none flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 hover:text-white active:text-white transition-colors disabled:opacity-50 "
         >
-          <Minus className="w-4 h-4" />
+          <Minus className="w-3 h-3" strokeWidth={3} />
         </button>
         
-        <span className="flex-1 text-center text-sm font-bold w-8 truncate select-none">
-          {isPending ? <Loader2 className="w-3 h-3 animate-spin mx-auto opacity-70" /> : qty}
+        {/* Qty takes remaining space, but is tight */}
+        <span className="flex-1 min-w-[20px] text-center text-xs font-bold truncate select-none leading-none px-1">
+          {qty}
         </span>
         
         <button
           onClick={(e) => handleUpdateQty(e, 1)}
-          disabled={isPending}
-          className="h-full w-9 flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50"
+          className="h-full w-8 flex-none flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 hover:text-white active:text-white transition-colors disabled:opacity-50 "
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3 h-3" strokeWidth={3} />
         </button>
       </div>
     );
   }
 
+  // --- COMPACT ADD BUTTON ---
   return (
     <Button
       variant="outline"
       size="sm"
       onClick={handleAddClick}
-      disabled={isPending || !inStock}
+      disabled={!inStock}
       className={cn(
-        "w-full h-9 text-xs sm:text-sm font-bold border-blue-600 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 shadow-sm rounded-lg uppercase tracking-wide transition-all active:scale-[0.98]",
+        "h-8 px-4 text-xs font-bold border-blue-200 text-blue-700 bg-white hover:bg-blue-50 hover:border-blue-300 shadow-sm rounded-full uppercase tracking-wide transition-all active:scale-[0.98]",
         className
       )}
     >
-      {isPending ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : !inStock ? (
-        <span className="text-gray-400">Out of Stock</span>
+      {!inStock ? (
+        <span className="text-gray-400 font-medium text-[10px] whitespace-nowrap">No Stock</span>
       ) : (
-        <>
-          <ShoppingCart className="w-4 h-4 mr-2" /> Add
-        </>
+        <span className="flex items-center gap-1">
+          ADD <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+        </span>
       )}
     </Button>
-  ); 
+  );
 }

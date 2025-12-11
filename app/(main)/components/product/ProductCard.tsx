@@ -1,22 +1,29 @@
 import Link from "next/link";
 import Image from "next/image";
-import { PackageOpen, Lock } from "lucide-react";
+import { Lock } from "lucide-react";
 import AddToCartButton from "./AddToCartButton";
-import WishlistButton from "../WishlistButton"; // <--- Import
+import WishlistButton from "../WishlistButton"; 
 import PriceDisplay from "./PriceDisplay"; 
 import { ProductData } from "@/lib/types";
 
 type Props = {
   product: ProductData;
   isLoggedIn: boolean;
-  isWishlisted?: boolean; // <--- New Prop
+  isWishlisted?: boolean;
 };
 
 export default function ProductCard({ product, isLoggedIn, isWishlisted = false }: Props) {
 
-  const perPiecePrice = (isLoggedIn && product.pack_size > 1 && product.final_price)
-    ? (product.final_price / product.pack_size).toFixed(2) 
-    : null;
+  // Logic: "12 x 115 ml" or "Pack of 12"
+  let variantLabel = product.variant_name;
+  
+  if (product.pack_size > 1) {
+    if (product.variant_name) {
+      variantLabel = `${product.pack_size} x ${product.variant_name}`;
+    } else {
+      variantLabel = `Pack of ${product.pack_size}`;
+    }
+  }
 
   return (
     <div className="group flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 h-full relative">
@@ -38,41 +45,51 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
         {/* Wishlist Button (Top Right) */}
         <div className="absolute top-2 right-2 z-10">
           <WishlistButton 
-            className="h-7 w-7"
+            className="h-7 w-7 shadow-sm bg-white/80 hover:bg-white"
             productId={product.id} 
-            isInitiallyWishlisted={isWishlisted}
+            initialState={isWishlisted}
             isLoggedIn={isLoggedIn}
           />
         </div>
       </Link>
 
       {/* 2. Content Area */}
-      <div className="p-2 sm:p-3 gap-2 sm:gap-2.5 flex-1 flex flex-col">
+      <div className="relative p-2.5 flex flex-col pt-3">
         
-        {/* Title */}
-        <Link href={`/p/${product.slug}/${product.id}`} className="block">
+        {/* FLOATING ACTION BUTTON (Overlaps Image) */}
+        {isLoggedIn && product.final_price !== null && (
+          <div className="absolute -top-4 right-1 z-20">
+            <AddToCartButton 
+              productId={product.id} 
+              inStock={product.in_stock}
+              packSize={product.pack_size}
+              name={product.name}
+              imageUrl={product.image_url}
+              price={product.final_price}
+              className="h-8 w-auto min-w-[70px] text-xs bg-white hover:bg-blue-50 border-blue-100 shadow-md rounded-xl text-blue-700 font-bold" 
+            />
+          </div>
+        )}
+
+        {/* A. Variant Info (Left side, avoiding the button) */}
+        <div className="min-h-[18px] mb-1.5 pr-[80px]"> 
+          {variantLabel && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200 whitespace-nowrap truncate max-w-full">
+              {variantLabel}
+            </span>
+          )}
+        </div>
+
+        {/* B. Title */}
+        <Link href={`/p/${product.slug}/${product.id}`} className="block mb-2">
           <h3 className="text-xs sm:text-sm font-medium text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        {/* Pack Info */}
-        {product.pack_size > 1 && (
-          <div className="flex items-center gap-1">
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-600 border border-gray-200 leading-none">
-              <PackageOpen className="w-3 h-3 hidden sm:block" /> Pack of {product.pack_size}
-            </span>
-            {perPiecePrice && (
-              <span className="text-[10px] text-blue-600 font-medium">
-                (₹{perPiecePrice}/pc)
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* ACCESS CONTROL */}
-        {isLoggedIn && product.final_price !== null ? (
-          <div className="mt-auto flex flex-col gap-2">
+        {/* C. Pricing (Sits directly under title) */}
+        <div>
+          {isLoggedIn && product.final_price !== null ? (
             <PriceDisplay 
               finalPrice={product.final_price}
               originalPrice={product.original_price}
@@ -83,32 +100,20 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
               unit={product.unit_name}
               size="sm" 
             />
-
-            <AddToCartButton 
-              productId={product.id} 
-              inStock={product.in_stock}
-              packSize={product.pack_size}
-              className="h-8 text-xs" 
-            />
-          </div>
-        ) : (
-          /* GUEST VIEW */
-          <div className="mt-auto pt-2">
-            <div className="flex items-center gap-1.5 text-gray-400 bg-gray-50 p-1.5 rounded border border-gray-100 mb-2">
-              <Lock className="w-3 h-3 shrink-0" />
-              <span className="text-[9px] font-medium leading-tight">
-                Price Locked
-              </span>
+          ) : (
+            /* GUEST VIEW */
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex items-center gap-1 text-gray-400">
+                <Lock className="w-3 h-3" />
+                <span className="text-[10px] font-medium">Locked</span>
+              </div>
+              <Link href="/login" className="text-[10px] font-bold text-blue-600 hover:underline">
+                Login
+              </Link>
             </div>
-            
-            <Link 
-              href="/login"
-              className="flex items-center justify-center w-full h-8 text-xs font-bold bg-gray-900 text-white rounded hover:bg-gray-800 transition-colors"
-            >
-              Login
-            </Link>
-          </div>
-        )}
+          )}
+        </div>
+
       </div>
     </div>
   );

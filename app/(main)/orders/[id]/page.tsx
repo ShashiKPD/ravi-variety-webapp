@@ -1,43 +1,34 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { 
-  ArrowLeft, 
   Printer, 
-  ShoppingBag, 
   MapPin, 
   Phone, 
   Mail, 
   ShieldCheck,
   Share2
 } from "lucide-react";
-import CancelOrderButton from "../../components/CancelOrderButton";
-import BackButton from "@/app/(main)/components/BackButton"; // Using our smart back button
+import CancelOrderButton from "@/app/(main)/components/orders/CancelOrderButton"; // Check your path
+import BackButton from "@/app/(main)/components/BackButton"; 
+import OrderItemList from "@/app/(main)/components/orders/OrderItemList"; // <--- NEW IMPORT
+import ShareOrderButton from "@/app/(main)/components/orders/ShareOrderButton";   // <--- NEW IMPORT
 
 export default async function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-  // 'id' here is the 'order_number' from the URL (e.g., ORD-7X91B)
   const { id } = await params; 
   const supabase = await createClient();
 
-  // 1. Auth Check (Redirect if not logged in)
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    redirect(`/login?next=/orders/${id}`);
-  }
+  if (!user) redirect(`/login?next=/orders/${id}`);
 
-  // 2. Fetch User Role
   const { data: viewerProfile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
 
-  // 3. Fetch Order by 'order_number'
   const { data: order } = await supabase
     .from("orders")
     .select("*")
@@ -46,7 +37,6 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
 
   if (!order) notFound();
 
-  // 4. Security Check (Owner or Admin)
   const isOwner = order.user_id === user.id;
   const isAdmin = viewerProfile?.role === "admin";
 
@@ -63,15 +53,29 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
     );
   }
 
-  // 5. Fetch Items
+  // Fetch Items
   const { data: items } = await supabase
     .from("order_items")
-    .select(`*, products (slug, image_urls)`)
+    .select(`*, products (slug)`)
     .eq("order_id", order.id);
 
-  const orderItems = items || [];
+  const orderItems = (items || []).map((i: any) => ({
+    id: i.id,
+    product_id: i.product_id,
+    product_name: i.product_name,
+    variant_name: i.variant_name,
+    pack_size: i.pack_size || 1,
+    slug: i.products?.slug,
+    snapshot_image: i.snapshot_image,
+    sku: i.sku,
+    unit_name: i.unit_name,
+    unit_price: i.unit_price,
+    mrp: i.mrp,
+    quantity: i.quantity,
+    total_price: i.total_price
+  }));
+
   const orderDate = new Date(order.created_at);
-  // Allow cancellation only if pending AND (viewer is owner OR admin)
   const isCancellable = order.status === 'pending' && (isOwner || isAdmin);
 
   const getStatusColor = (status: string) => {
@@ -93,12 +97,9 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         <BackButton href="/orders" label="Back to Orders" />
         
         <div className="flex gap-2 w-full sm:w-auto">
-          {/* Share Button (Desktop only for now, or make responsive) */}
-          <Button variant="outline" size="sm" className="hidden sm:flex gap-2 bg-white">
-             <Share2 className="w-4 h-4" /> Share
-          </Button>
+          <ShareOrderButton orderNumber={order.order_number} />
           
-          <Button variant="outline" size="sm" className="gap-2 flex-1 sm:flex-none bg-white">
+          <Button variant="outline" size="sm" className="hidden sm:flex gap-2 bg-white">
             <Printer className="w-4 h-4" /> Print
           </Button>
           
@@ -114,14 +115,18 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
         
         {/* LEFT COLUMN: Main Order Info */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="overflow-hidden border-gray-200 shadow-sm">
-            <CardHeader className="bg-gray-50/50 border-b py-6">
+          
+          {/* Main Content Container (Replaced Card) */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            
+            {/* Header Section */}
+            <div className="bg-gray-50/50 border-b border-gray-200 px-6 py-4">
               <div className="flex flex-wrap justify-between items-start gap-4">
                 <div>
-                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                  <h1 className="text-lg sm:text-xl font-bold text-gray-900">
                     Order #{order.order_number}
-                  </CardTitle>
-                  <CardDescription className="mt-1 flex items-center gap-2">
+                  </h1>
+                  <p className="mt-1 flex items-center gap-2 text-sm text-gray-500">
                     Placed on {orderDate.toLocaleDateString('en-IN', { 
                       year: 'numeric', month: 'long', day: 'numeric'
                     })}
@@ -129,128 +134,30 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
                     <span className="hidden sm:inline">
                       {orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
-                  </CardDescription>
+                  </p>
                 </div>
                 <Badge variant="outline" className={`px-3 py-1 rounded-full capitalize ${getStatusColor(order.status)}`}>
                   {order.status}
                 </Badge>
               </div>
-            </CardHeader>
+            </div>
 
-            {/* Content: P-0 allows the table/list to touch edges */}
-            <CardContent className="p-0">
-              
-              {/* --- DESKTOP VIEW (Table) --- */}
-              <div className="hidden sm:block">
-                <div className="bg-gray-50/30 px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider grid grid-cols-12 gap-4 border-b border-gray-100">
-                  <div className="col-span-6">Product Details</div>
-                  <div className="col-span-2 text-right">Price</div>
-                  <div className="col-span-2 text-center">Qty</div>
-                  <div className="col-span-2 text-right">Total</div>
-                </div>
-
-                <div className="divide-y divide-gray-100">
-                  {orderItems.map((item) => {
-                    const imgUrl = item.products?.image_urls?.[0];
-                    return (
-                      <div key={item.id} className="grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-gray-50/30 transition-colors group">
-                        <div className="col-span-6 flex gap-4 items-center">
-                          <div className="h-12 w-12 rounded-md border border-gray-200 bg-white relative overflow-hidden shrink-0">
-                            {imgUrl ? (
-                              <Image src={imgUrl} alt={item.product_name} fill className="object-cover" />
-                            ) : (
-                              <div className="flex items-center justify-center w-full h-full text-gray-300">
-                                <ShoppingBag className="w-5 h-5" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0">
-                            <Link href={`/p/${item.products?.slug}/${item.product_id}`} className="font-medium text-sm text-gray-900 truncate block hover:text-blue-600 transition-colors" title={item.product_name}>
-                              {item.product_name}
-                            </Link>
-                            <div className="flex gap-2 mt-1">
-                              {item.variant_name && (
-                                <Badge variant="secondary" className="text-[10px] px-1.5 h-5 font-normal bg-gray-100 text-gray-600 border border-gray-200">
-                                  {item.variant_name}
-                                </Badge>
-                              )}
-                              {item.unit_name && (
-                                <span className="text-[10px] text-gray-400 self-center">
-                                  / {item.unit_name}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="col-span-2 text-right text-sm text-gray-600 font-medium">₹{item.unit_price}</div>
-                        <div className="col-span-2 text-center text-sm font-bold text-gray-900 bg-gray-50 py-1 rounded mx-auto w-12">{item.quantity}</div>
-                        <div className="col-span-2 text-right text-sm font-bold text-gray-900">₹{item.total_price}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* --- MOBILE VIEW (Card Stack) --- */}
-              <div className="sm:hidden divide-y divide-gray-100">
-                {orderItems.map((item) => {
-                  const imgUrl = item.products?.image_urls?.[0];
-                  return (
-                    <div key={item.id} className="p-4 flex gap-4">
-                      {/* Image Left */}
-                      <div className="h-20 w-20 rounded-lg border border-gray-200 bg-gray-50 relative overflow-hidden shrink-0">
-                        {imgUrl ? (
-                          <Image src={imgUrl} alt={item.product_name} fill className="object-cover" />
-                        ) : (
-                          <div className="flex items-center justify-center w-full h-full text-gray-300">
-                            <ShoppingBag className="w-6 h-6" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Content Right */}
-                      <div className="flex-1 flex flex-col justify-between py-0.5">
-                        <div>
-                          <p className="font-medium text-sm text-gray-900 line-clamp-2 leading-snug">
-                            {item.product_name}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            {item.variant_name && (
-                              <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                                {item.variant_name}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-end justify-between mt-2">
-                          <div className="text-xs text-gray-500 font-medium">
-                            {item.quantity} <span className="text-gray-300 mx-1">x</span> ₹{item.unit_price}
-                          </div>
-                          <div className="text-sm font-bold text-gray-900">
-                            ₹{item.total_price}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            {/* List Content */}
+            <div>
+              <OrderItemList items={orderItems} />
 
               {/* Footer Total */}
-              <div className="bg-gray-50 p-4 sm:px-6 border-t border-gray-200 flex justify-between items-center gap-4">
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between items-center gap-4">
                  <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Grand Total</span>
                  <span className="text-xl font-bold text-gray-900">₹{order.total_amount}</span>
               </div>
-
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
-        {/* RIGHT COLUMN: Summary & Sidebar */}
+        {/* RIGHT COLUMN: Sidebar */}
         <div className="space-y-6">
           
-          {/* Status Note */}
           {order.status === 'pending' && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
               <p className="font-semibold mb-1">Order Pending Approval</p>
@@ -260,11 +167,13 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
             </div>
           )}
 
-          <Card className="border-gray-200 shadow-sm gap-2">
-            <CardHeader className="border-b bg-gray-50/50 py-4">
-              <CardTitle className="text-base">Delivery Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-5 pt-5">
+          {/* Delivery Details Container (Replaced Card) */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="bg-gray-50/50 border-b border-gray-200 px-4 py-3">
+              <h2 className="text-base font-semibold text-gray-900">Delivery Details</h2>
+            </div>
+            
+            <div className="p-4 space-y-5">
               <div className="flex gap-3">
                  <div className="bg-blue-50 p-2 h-fit rounded-full text-blue-600 shrink-0">
                    <MapPin className="w-4 h-4" />
@@ -302,9 +211,8 @@ export default async function OrderDetailsPage({ params }: { params: Promise<{ i
                    </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-
+            </div>
+          </div>
         </div>
       </div>
     </div>

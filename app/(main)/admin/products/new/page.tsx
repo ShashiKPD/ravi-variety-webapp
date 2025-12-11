@@ -6,16 +6,41 @@ export default async function NewProductPage() {
   const supabase = await createClient();
 
   const [catRes, brandRes, groupRes, unitRes] = await Promise.all([
-    supabase.from("categories").select("id, name").order('name'),
-    supabase.from("brands").select("id, name").order('name'),
-    supabase.from("product_groups")
+    // 1. Categories: Only fetch those linked to a brand (!inner join)
+    supabase
+      .from("categories")
+      .select("id, name, brand_categories!inner(brand_id)")
+      .order('name'),
+
+    // 2. Brands: Fetch with their linked category IDs
+    supabase
+      .from("brands")
+      .select("id, name, brand_categories(category_id)")
+      .order('name'),
+
+    // 3. Existing Groups
+    supabase
+      .from("product_groups")
       .select("id, name, brand_id, brands(name), products(sku)")
       .order('name'),
+
+    // 4. Units
     supabase.from("units").select("id, name, short_name").order('name')
   ]);
 
-  const categories = catRes.data || [];
-  const brands = brandRes.data || [];
+  // Transform Data
+  const categories = (catRes.data || []).map((c: any) => ({
+    id: c.id,
+    name: c.name
+  }));
+
+  // Pass categoryIds with brands for frontend filtering logic
+  const brands = (brandRes.data || []).map((b: any) => ({
+    id: b.id,
+    name: b.name,
+    categoryIds: b.brand_categories?.map((bc: any) => bc.category_id) || []
+  }));
+
   const units = unitRes.data || [];
 
   const existingGroups = (groupRes.data || []).map((g: any) => ({

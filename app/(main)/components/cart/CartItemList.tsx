@@ -3,29 +3,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useTransition, useState } from "react";
-import { Trash2, Loader2, Minus, Plus, Package } from "lucide-react";
+import { Trash2, Loader2, Minus, Plus, Package, Layers, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { removeItem, updateQuantity } from "@/app/(main)/cart/actions";
 
-type B2BCartItem = {
-  id: number;
+// Updated Type (matches new RPC output)
+type CartItemRPC = {
+  cart_id: number; // <--- Changed from 'id'
   product_id: number;
   quantity: number;
-  productName: string;
-  variantName: string | null;
+  name: string;
   slug: string;
   sku?: string;
   image_url: string | null;
-  unitPrice: number;
-  mrp: number;
-  stock: number;
-  itemTotal: number;
-  unitName?: string; 
+  stock_quantity: number;
+  variant_label: string | null;
+  unit_name: string;
+  unit_price: number;
+  original_price: number;
+  price_source: 'standard' | 'bulk' | 'sale';
+  discount_label: string | null;
+  savings_percent: number;
+  item_total: number;
+  total_savings: number;
 };
 
-export default function CartItemList({ items }: { items: B2BCartItem[] }) {
+export default function CartItemList({ items }: { items: CartItemRPC[] }) {
   const [isPending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<number | null>(null);
 
@@ -49,12 +53,10 @@ export default function CartItemList({ items }: { items: B2BCartItem[] }) {
   return (
     <ul className="divide-y divide-gray-100">
       {items.map((item) => {
-        const margin = item.mrp > 0 
-          ? Math.round(((item.mrp - item.unitPrice) / item.mrp) * 100) 
-          : 0;
+        const isStandard = item.price_source === 'standard';
 
         return (
-          <li key={item.id} className="flex gap-4 py-4 px-4 sm:px-6 hover:bg-gray-50/50 transition-colors group">
+          <li key={item.cart_id} className="flex gap-4 py-4 px-4 sm:px-6 hover:bg-gray-50/50 transition-colors group">
             
             {/* 1. Product Image */}
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 shrink-0 overflow-hidden rounded-lg border bg-white shadow-sm">
@@ -62,7 +64,7 @@ export default function CartItemList({ items }: { items: B2BCartItem[] }) {
                 {item.image_url ? (
                    <Image
                      src={item.image_url}
-                     alt={item.productName}
+                     alt={item.name}
                      fill
                      className="object-contain p-1 mix-blend-multiply group-hover:scale-105 transition-transform duration-300"
                    />
@@ -78,14 +80,14 @@ export default function CartItemList({ items }: { items: B2BCartItem[] }) {
             <div className="flex flex-1 flex-col sm:flex-row gap-4 min-w-0">
               
               {/* Product Info */}
-              <div className="flex-1 space-y-1">
+              <div className="flex-1 space-y-1.5">
                 <div className="flex justify-between items-start gap-2">
                   <Link href={`/p/${item.slug}/${item.product_id}`} className="block">
                     <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug hover:text-blue-600 transition-colors">
-                      {item.productName}
+                      {item.name}
                     </h3>
                   </Link>
-                  {/* Mobile Remove Button (Top Right) */}
+                  {/* Mobile Remove Button */}
                   <button 
                     onClick={() => handleRemove(item.product_id)} 
                     disabled={isPending}
@@ -95,34 +97,43 @@ export default function CartItemList({ items }: { items: B2BCartItem[] }) {
                   </button>
                 </div>
                 
-                {/* Variant & SKU */}
+                {/* Variant Info & Tags */}
                 <div className="flex flex-wrap items-center gap-2">
-                  {item.variantName && (
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-medium bg-gray-100 text-gray-600 border-gray-200">
-                      {item.variantName}
+                  {item.variant_label && (
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-medium bg-gray-100 text-gray-600 border-gray-200 whitespace-nowrap">
+                      {item.variant_label}
                     </Badge>
                   )}
-                  {item.sku && (
-                    <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">
-                      #{item.sku}
-                    </span>
+                  
+                  {!isStandard && (
+                    <Badge variant="secondary" className={`text-[10px] px-1.5 py-0 h-5 font-bold whitespace-nowrap gap-1 ${
+                      item.price_source === 'bulk' 
+                        ? 'bg-blue-50 text-blue-700 border-blue-100' 
+                        : 'bg-green-50 text-green-700 border-green-100'
+                    }`}>
+                      {item.price_source === 'bulk' ? <Layers className="w-3 h-3" /> : <Tag className="w-3 h-3" />}
+                      {item.discount_label || `${item.savings_percent}% OFF`}
+                    </Badge>
                   )}
                 </div>
 
                 {/* Price Block */}
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-base font-bold text-gray-900">₹{item.unitPrice}</span>
-                  {item.mrp > item.unitPrice && (
-                    <>
-                      <span className="text-xs text-gray-400 line-through">₹{item.mrp}</span>
-                      {margin > 0 && (
-                        <span className="text-[10px] font-bold text-green-700 bg-green-50 px-1.5 py-0.5 rounded border border-green-100">
-                          {margin}% Margin
-                        </span>
-                      )}
-                    </>
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 mt-1">
+                  <span className="text-base font-bold text-gray-900">
+                    ₹{item.unit_price}
+                  </span>
+
+                  {isStandard ? (
+                    <span className="text-xs text-gray-500">
+                      MRP: ₹{item.original_price}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400 line-through">
+                      ₹{item.original_price}
+                    </span>
                   )}
-                  <span className="text-xs text-gray-400">/ {item.unitName || "unit"}</span>
+                  
+                  <span className="text-xs text-gray-400">/ {item.unit_name}</span>
                 </div>
               </div>
 
@@ -152,9 +163,16 @@ export default function CartItemList({ items }: { items: B2BCartItem[] }) {
                   </button>
                 </div>
 
-                {/* Item Total */}
+                {/* Item Total & Savings */}
                 <div className="text-right">
-                   <p className="font-bold text-base sm:text-lg text-gray-900">₹{item.itemTotal.toFixed(2)}</p>
+                   <p className="font-bold text-base sm:text-lg text-gray-900">
+                     ₹{item.item_total.toFixed(2)}
+                   </p>
+                   {item.total_savings > 0 && (
+                     <p className="text-[10px] text-green-600 font-medium">
+                       Saved ₹{item.total_savings.toFixed(2)}
+                     </p>
+                   )}
                 </div>
 
                 {/* Desktop Remove Button */}

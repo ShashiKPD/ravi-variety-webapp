@@ -143,31 +143,53 @@ export async function placeOrder() {
   }
 
   try {
-    // 1. Call RPC (Returns numeric ID)
-    const { data: numericId, error } = await supabase
-      .rpc("place_order", { p_user_id: user.id });
+    // 1. Call RPC (No arguments - Secure)
+    // The RPC returns JSON: { "success": true, "orderId": "ORD-XXXX" }
+    const { data, error } = await supabase.rpc("place_order");
 
     if (error) throw error;
 
-    // 2. Fetch the 'order_number' string for redirection
-    const { data: orderData, error: fetchError } = await supabase
-      .from("orders")
-      .select("order_number")
-      .eq("id", numericId)
-      .single();
+    // Check for logical errors returned by RPC (e.g., "Cart is empty")
+    if (data && data.error) {
+      throw new Error(data.error);
+    }
 
-    if (fetchError) throw fetchError;
-
-    // 3. Clear Caches
+    // 2. Clear Caches
     revalidatePath("/cart");   
     revalidatePath("/orders"); 
     revalidatePath("/");       
 
-    // 4. Return the STRING ID (e.g., "ORD-8921")
-    return { success: true, orderId: orderData.order_number };
+    // 3. Return the Order ID directly
+    return { success: true, orderId: data.orderId };
 
   } catch (error: any) {
     console.error("Order Failed:", error);
     return { error: error.message || "Failed to place order." };
   }
+}
+
+export async function bulkSyncCart(items: { productId: number; quantity: number }[]) {
+  const supabase = await createClient();
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Please login to checkout" };
+
+  // Prepare JSON for RPC
+  const payload = items.map(i => ({
+    product_id: i.productId,
+    quantity: i.quantity
+  }));
+
+  // Call the "Replace" RPC
+  const { error } = await supabase.rpc("sync_cart_state", {
+    p_items: payload
+  });
+
+  if (error) {
+    console.error("Cart Sync Error:", error);
+    return { error: "Failed to sync cart" };
+  }
+
+  revalidatePath("/cart");
+  return { success: true };
 }

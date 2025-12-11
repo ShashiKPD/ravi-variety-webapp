@@ -101,29 +101,40 @@ export async function deleteCategory(id: number) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Unauthorized" };
 
-  // 1. Check dependencies
-  const { count, error: countError } = await supabase
+  // 1. Check Product Dependencies
+  const { count: productCount, error: countError } = await supabase
     .from("product_groups")
     .select("id", { count: "exact", head: true })
     .eq("category_id", id);
 
   if (countError) return { error: countError.message };
-  if (count && count > 0) {
-    return { error: `Cannot delete: Used by ${count} product families.` };
+  if (productCount && productCount > 0) {
+    return { error: `Cannot delete: Used by ${productCount} product families.` };
   }
 
-  // 2. Fetch image URL before deleting
+  // 2. Check Brand Dependencies (New Check)
+  const { count: brandCount, error: brandError } = await supabase
+    .from("brand_categories")
+    .select("category_id", { count: "exact", head: true })
+    .eq("category_id", id);
+
+  if (brandError) return { error: brandError.message };
+  if (brandCount && brandCount > 0) {
+    return { error: `Cannot delete: Linked to ${brandCount} brands. Please unlink them first.` };
+  }
+
+  // 3. Fetch image URL before deleting
   const { data: category } = await supabase
     .from("categories")
     .select("image_url")
     .eq("id", id)
     .single();
 
-  // 3. Delete Row
+  // 4. Delete Row
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) return { error: error.message };
 
-  // 4. CLEANUP: Delete image from storage if exists
+  // 5. CLEANUP: Delete image from storage if exists
   const storagePath = getStoragePath(category?.image_url);
   if (storagePath) {
     const { error: storageError } = await supabase.storage
@@ -131,8 +142,6 @@ export async function deleteCategory(id: number) {
       .remove([storagePath]);
       
     if (storageError) {
-      // We don't fail the request here, but we log it.
-      // The category is already deleted from DB.
       console.error("Failed to cleanup image:", storageError);
     }
   }

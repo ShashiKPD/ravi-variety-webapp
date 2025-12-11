@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { CartProvider } from "@/lib/context/CartContext";
+import FloatingCartBar from "@/app/(main)/components/cart/FloatingCartBar";
 import { Toaster } from "sonner"; // <--- 1. Import Toaster
 import "./globals.css";
 
@@ -18,9 +20,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        {children}
-        {/* 2. Add Toaster here. 'richColors' makes success green / error red automatically. */}
-        <Toaster richColors position="top-center" /> 
+        <CartProvider>
+          {children}
+          <FloatingCartBar />
+          <Toaster richColors position="top-center" /> 
+        </CartProvider>
       </body>
     </html>
   );

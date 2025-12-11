@@ -18,7 +18,7 @@ import { toast } from "sonner";
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 type Props = {
-  type: "Brand" | "Category" | "Supercategory"; 
+  type: "Category" | "Supercategory"; // Removed "Brand"
   parents?: { id: number; name: string }[]; 
   onSubmit: (formData: FormData) => Promise<{ error?: string; success?: string }>;
 };
@@ -26,7 +26,7 @@ type Props = {
 export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [fileError, setFileError] = useState<string | null>(null); // Local error state
+  const [fileError, setFileError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +39,7 @@ export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
     const formData = new FormData(e.currentTarget);
     const imageFile = formData.get("image") as File;
     
+    // Clean up empty parent selection
     if (formData.get("supercategory_id") === "0") {
       formData.delete("supercategory_id");
     }
@@ -46,10 +47,7 @@ export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
     try {
       let uploadedUrl = "";
 
-      // 1. Image Validation & Upload
       if (imageFile && imageFile.size > 0) {
-        
-        // Double Check Size (redundant safety)
         if (imageFile.size > MAX_FILE_SIZE) {
           throw new Error("File is too large. Max limit is 5MB.");
         }
@@ -72,13 +70,11 @@ export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
         uploadedUrl = data.publicUrl;
       }
 
-      // 2. Prepare Data
       formData.delete("image");
       if (uploadedUrl) {
         formData.append("image_url", uploadedUrl);
       }
 
-      // 3. Submit
       const res = await onSubmit(formData);
       
       if (res.error) {
@@ -105,11 +101,9 @@ export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
 
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
-        const msg = "File is too large (Max 5MB). Please choose a smaller image.";
+        const msg = "File is too large (Max 5MB).";
         toast.error(msg);
         setFileError(msg);
-        
-        // Clear the input
         e.target.value = ""; 
         setPreview(null);
         return;
@@ -125,7 +119,7 @@ export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
         {/* Image Input Section */}
         <div className="w-full sm:w-auto shrink-0 flex flex-col gap-2">
           <Label htmlFor="image" className="text-xs font-medium text-gray-500">
-            {type} Logo <span className="text-red-500">*</span>
+            {type} Icon/Image <span className="text-red-500">*</span>
           </Label>
           
           <div className="flex flex-col gap-2">
@@ -153,12 +147,6 @@ export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
               />
             </label>
             
-            {/* Explicit Mobile Helper Text */}
-            <p className="text-[10px] text-muted-foreground">
-              Max 5MB. Formats: JPG, PNG, WebP.
-            </p>
-            
-            {/* Explicit Error Text */}
             {fileError && (
               <p className="text-[10px] text-red-600 font-medium flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" /> {fileError}
@@ -171,7 +159,7 @@ export default function TaxonomyForm({ type, parents, onSubmit }: Props) {
         <div className="flex-1 w-full space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">{type} Name</Label>
-            <Input name="name" placeholder={`e.g. ${type === 'Brand' ? 'Aachi' : type === 'Category' ? 'Pickles' : 'Groceries'}`} required />
+            <Input name="name" placeholder={`e.g. ${type === 'Category' ? 'Pickles' : 'Groceries'}`} required />
           </div>
 
           {parents && parents.length > 0 && (

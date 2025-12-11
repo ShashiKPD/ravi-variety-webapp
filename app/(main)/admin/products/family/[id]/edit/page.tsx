@@ -1,6 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import ProductStackForm from "../../../../components/ProductStackForm"; // Check path
+import ProductStackForm from "../../../../components/ProductStackForm"; // Ensure path is correct relative to your structure
 import BackButton from "@/app/(main)/components/BackButton";
 
 export default async function EditFamilyPage({ params }: { params: Promise<{ id: string }> }) {
@@ -33,23 +33,46 @@ export default async function EditFamilyPage({ params }: { params: Promise<{ id:
     const retailer = v.price_tiers?.find((p: any) => p.role === 'retailer' && p.min_quantity === 1);
     const wholesaler = v.price_tiers?.find((p: any) => p.role === 'wholesaler' && p.min_quantity === 1);
     
-    // The rest of the tiers (bulk) will be handled by the form's initializer
-    // We just need to ensure 'price_tiers' is passed along in the variant object
     return {
       ...v,
       mrp: retailer?.mrp || 0,
       price_retailer: retailer?.unit_price || 0,
       price_wholesaler: wholesaler?.unit_price || 0,
-      // price_tiers array is already included via spread
+      // price_tiers array is passed for the form to handle bulk tiers
     };
   });
 
-  // 3. Fetch Metadata
+  // 3. Fetch Metadata (Updated to support Dependent Dropdowns)
   const [catRes, brandRes, unitRes] = await Promise.all([
-    supabase.from("categories").select("id, name").order('name'),
-    supabase.from("brands").select("id, name").order('name'),
+    // Categories: Only fetch those linked to a brand (!inner join)
+    supabase
+      .from("categories")
+      .select("id, name, brand_categories!inner(brand_id)")
+      .order('name'),
+
+    // Brands: Fetch with their linked category IDs
+    supabase
+      .from("brands")
+      .select("id, name, brand_categories(category_id)")
+      .order('name'),
+
+    // Units
     supabase.from("units").select("id, name, short_name").order('name') 
   ]);
+
+  // Transform Data for Form Props
+  const categories = (catRes.data || []).map((c: any) => ({
+    id: c.id,
+    name: c.name
+  }));
+
+  const brands = (brandRes.data || []).map((b: any) => ({
+    id: b.id,
+    name: b.name,
+    categoryIds: b.brand_categories?.map((bc: any) => bc.category_id) || []
+  }));
+
+  const units = unitRes.data || [];
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-24 space-y-6">
@@ -66,10 +89,10 @@ export default async function EditFamilyPage({ params }: { params: Promise<{ id:
       </div>
       
       <ProductStackForm
-        categories={catRes.data || []}
-        brands={brandRes.data || []}
-        units={unitRes.data || []} 
-        existingGroups={[]} 
+        categories={categories}
+        brands={brands}
+        units={units} 
+        existingGroups={[]} // Not needed in edit mode
         initialData={{
           groupId: group.id,
           brandId: group.brand_id,

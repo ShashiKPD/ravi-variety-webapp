@@ -45,7 +45,7 @@ export default async function ManageSupercategoriesPage() {
         <CardContent>
           <TaxonomyTable 
             data={supercategories || []} 
-            type="Category" 
+            type="Supercategory" 
             onDelete={deleteSupercategory}
             onUpdate={updateSupercategory}
           />

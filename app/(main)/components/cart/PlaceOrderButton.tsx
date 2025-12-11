@@ -6,15 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowRight } from "lucide-react";
 import { placeOrder } from "@/app/(main)/cart/actions";
 import { toast } from "sonner";
+import { useCart } from "@/lib/context/CartContext"; // <--- Import Context
 
 export default function PlaceOrderButton() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  
+  // Destructure clearCart from your context
+  // (Ensure you've added this function to your CartContext provider as shown below)
+  const { clearCart } = useCart(); 
 
   const handlePlaceOrder = async () => {
-    // Optional: Add a confirmation dialog if you want
-    // if (!confirm("Confirm order placement?")) return;
-
     setLoading(true);
 
     try {
@@ -24,12 +26,17 @@ export default function PlaceOrderButton() {
         toast.error(res.error);
         setLoading(false);
       } else if (res.success && res.orderId) {
+        
+        // 1. Clear Local State & Storage immediately
+        clearCart();
+        
         toast.success("Order placed successfully!");
-        // Navigate to the Order Receipt page
-        // Using orderId returned from your RPC
+        
+        // 2. Navigate to Order Receipt
         router.push(`/orders/${res.orderId}`);
       }
     } catch (err) {
+      console.error(err);
       toast.error("Something went wrong. Please try again.");
       setLoading(false);
     }

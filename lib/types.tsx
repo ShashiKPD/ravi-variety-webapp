@@ -25,14 +25,20 @@ export interface ProductData {
   name: string;
   slug: string;
   image_url: string | null;
+  
+  // Inventory
   in_stock: boolean;
+  
+  // Variant Details
   pack_size: number;
   unit_name: string;
+  variant_name: string | null; // <--- (e.g., "500g", "XL")
+
   // Pricing
   final_price: number;
   original_price: number;
   mrp: number;
-  price_source: 'standard' | 'bulk' | 'sale'; // <--- The decision flag
+  price_source: 'standard' | 'bulk' | 'sale'; 
   discount_label: string | null;
   savings_percentage: number;
 }

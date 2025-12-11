@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { XCircle, Loader2 } from "lucide-react";
-import { cancelUserOrder } from "../orders/actions";
+import { cancelUserOrder } from "../../orders/actions";
 
 export default function CancelOrderButton({ orderId }: { orderId: number }) {
   const [loading, setLoading] = useState(false);

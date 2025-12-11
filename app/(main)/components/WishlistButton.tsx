@@ -9,13 +9,13 @@ import { useRouter } from "next/navigation";
 
 type Props = {
   productId: number;
-  isInitiallyWishlisted: boolean;
+  initialState: boolean;
   className?: string; // Added prop
   isLoggedIn: boolean;
 };
 
-export default function WishlistButton({ productId, isInitiallyWishlisted, className, isLoggedIn }: Props) {
-  const [isWishlisted, setIsWishlisted] = useState(isInitiallyWishlisted);
+export default function WishlistButton({ productId, initialState, className, isLoggedIn }: Props) {
+  const [isWishlisted, setIsWishlisted] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
