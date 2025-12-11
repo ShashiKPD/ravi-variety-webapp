@@ -6,6 +6,34 @@ import { revalidatePath } from "next/cache";
 // Helper for slug generation
 const slugify = (text: string) => text.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-');
 
+type RowUpdate = {
+  id: number;
+  changes: {
+    stock?: number;
+    price_retailer?: number;   // Renamed
+    price_wholesaler?: number; // Added
+    saleId?: number | null; // Null means remove from sale
+    discountType?: "percentage" | "fixed_price";
+    discountValue?: number;
+    isFeatured?: boolean; // NEW
+  };
+};
+
+type BulkUpdatePayload = {
+  scope: "selection" | "all_matching";
+  selectedIds?: number[];
+  filterParams?: any; 
+  changes: {
+    stock?: number;
+    price_retailer?: number;   // Renamed
+    price_wholesaler?: number; // Added
+    saleId?: number;
+    discountType?: "percentage" | "fixed_price"; // <--- UPDATED to match DB constraint
+    discountValue?: number;
+    isFeatured?: boolean; // NEW
+  };
+};
+
 // 1. CREATE PRODUCT STACK
 export async function createProductStack(formData: FormData) {
   const supabase = await createClient();
@@ -106,4 +134,104 @@ export async function updateProductQuick(formData: FormData) {
 
   revalidatePath("/admin/products");
   return { success: "Updated successfully" };
+}
+
+export async function updateInventoryRows(updates: RowUpdate[]) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    const promises = updates.map(async (row) => {
+      const { id, changes } = row;
+
+      // Update Products Table (Stock & Featured)
+      const productUpdates: any = {};
+      if (changes.stock !== undefined) productUpdates.stock_quantity = changes.stock;
+      if (changes.isFeatured !== undefined) productUpdates.is_featured = changes.isFeatured;
+      
+      if (Object.keys(productUpdates).length > 0) {
+        await supabase.from("products").update(productUpdates).eq("id", id);
+      }
+
+      // Update Retailer Price
+      if (changes.price_retailer !== undefined) {
+        await supabase.from("price_tiers").upsert({
+          product_id: id, role: "retailer", min_quantity: 1, unit_price: changes.price_retailer
+        }, { onConflict: "product_id, role, min_quantity" });
+      }
+
+      // Update Wholesaler Price
+      if (changes.price_wholesaler !== undefined) {
+        await supabase.from("price_tiers").upsert({
+          product_id: id, role: "wholesaler", min_quantity: 1, unit_price: changes.price_wholesaler
+        }, { onConflict: "product_id, role, min_quantity" });
+      }
+
+      // Update Sale
+      if (changes.saleId !== undefined) {
+        if (changes.saleId === null) {
+          await supabase.from("sale_items").delete().eq("product_id", id);
+        } else if (changes.discountValue !== undefined && changes.discountType) {
+          await supabase.from("sale_items").delete().eq("product_id", id);
+          await supabase.from("sale_items").insert({
+            sale_id: changes.saleId, product_id: id,
+            discount_type: changes.discountType, discount_value: changes.discountValue
+          });
+        }
+      }
+    });
+
+    await Promise.all(promises);
+    revalidatePath("/admin/products");
+    return { success: true, count: updates.length };
+  } catch (error: any) {
+    return { error: error.message };
+  }
+}
+
+export async function bulkUpdateInventory(payload: BulkUpdatePayload) {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  try {
+    let targetIds: number[] = [];
+    if (payload.scope === "selection") {
+      targetIds = payload.selectedIds || [];
+    } else {
+      const { data: searchResults } = await supabase.rpc("search_products", {
+        ...payload.filterParams, p_page: 1, p_limit: 10000
+      });
+      targetIds = searchResults.map((p: any) => p.id);
+    }
+
+    if (targetIds.length === 0) return { success: true, count: 0 };
+
+    // Updated RPC Call
+    const { error: updateError } = await supabase.rpc("batch_update_inventory", {
+      p_product_ids: targetIds,
+      p_stock: payload.changes.stock ?? null,
+      p_price_retailer: payload.changes.price_retailer ?? null,     
+      p_price_wholesaler: payload.changes.price_wholesaler ?? null, 
+      p_sale_id: payload.changes.saleId ?? null,
+      p_discount_type: payload.changes.discountType ?? null,
+      p_discount_value: payload.changes.discountValue ?? null,
+      p_is_featured: payload.changes.isFeatured ?? null // NEW
+    });
+
+    if (updateError) throw updateError;
+    revalidatePath("/admin/products");
+    return { success: true, count: targetIds.length };
+  } catch (error: any) {
+    return { error: error.message || "Update failed" };
+  }
+}
+
+export async function getActiveSales() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_active_sales_options");
+  if (error) return [];
+  return data;
 }

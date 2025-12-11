@@ -43,11 +43,17 @@ export default async function CategoryPage({ params, searchParams }: any) {
   const activeCategorySlug = urlParams.category || null;
   const finalCategorySlugs = activeCategorySlug ? [activeCategorySlug] : categorySlugs;
 
+  // FIX: Parse brands as strings (slugs), not numbers
+  const brandSlugs = urlParams.brands ? urlParams.brands.split(",") : null;
+
   const { data: rawProducts, error } = await supabase.rpc("search_products", {
     p_search_text: urlParams.q || null,
     p_supercategory_slug: supercat.slug,
     p_category_slugs: finalCategorySlugs,
-    p_brand_ids: urlParams.brands?.split(",").map(Number) || null,
+    
+    // FIX: Use p_brand_slugs instead of p_brand_ids
+    p_brand_slugs: brandSlugs, 
+    
     p_min_price: urlParams.min_price ? Number(urlParams.min_price) : null,
     p_max_price: urlParams.max_price ? Number(urlParams.max_price) : null,
     p_in_stock: urlParams.stock === 'true' ? true : null,
@@ -99,7 +105,6 @@ export default async function CategoryPage({ params, searchParams }: any) {
       </div>
 
       <div className="max-w-[1600px] mx-auto w-full flex-1 flex items-start">
-        {/* Sidebar: Removed 'hidden md:block' to ensure visibility on mobile */}
         <aside className="w-[20%] shrink-0 border-r border-gray-200 min-h-[calc(100vh-110px)] bg-white sticky top-[110px] self-start overflow-y-auto max-h-[calc(100vh-110px)] scrollbar-hide">
              <SuperCategorySidebar 
                taxonomy={taxonomy || []} 

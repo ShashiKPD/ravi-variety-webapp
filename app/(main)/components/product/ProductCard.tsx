@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Lock } from "lucide-react";
+import { Lock } from "lucide-react"; // Removed TrendingDown
 import AddToCartButton from "./AddToCartButton";
 import WishlistButton from "../WishlistButton"; 
 import PriceDisplay from "./PriceDisplay"; 
@@ -13,10 +13,7 @@ type Props = {
 };
 
 export default function ProductCard({ product, isLoggedIn, isWishlisted = false }: Props) {
-
-  // Logic: "12 x 115 ml" or "Pack of 12"
   let variantLabel = product.variant_name;
-  
   if (product.pack_size > 1) {
     if (product.variant_name) {
       variantLabel = `${product.pack_size} x ${product.variant_name}`;
@@ -25,11 +22,22 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
     }
   }
 
+  // Calculate if we should show the % OFF badge on image
+  const showDiscountBadge = isLoggedIn && product.savings_percentage > 0;
+
   return (
     <div className="group flex flex-col bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-300 h-full relative">
       
       {/* 1. Image Area */}
       <Link href={`/p/${product.slug}/${product.id}`} className="relative aspect-square bg-white p-2 block overflow-hidden">
+        
+        {/* UPDATED: Compact Green Badge (No Arrow) */}
+        {showDiscountBadge && (
+          <div className="absolute top-0 left-0 z-10 bg-green-700 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-br-md shadow-sm">
+            {product.savings_percentage}% OFF
+          </div>
+        )}
+
         {product.image_url ? (
           <Image 
             src={product.image_url} 
@@ -42,7 +50,6 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
           <div className="w-full h-full bg-gray-50 flex items-center justify-center text-gray-300 text-[10px] font-medium">No Image</div>
         )}
         
-        {/* Wishlist Button (Top Right) */}
         <div className="absolute top-2 right-2 z-10">
           <WishlistButton 
             className="h-7 w-7 shadow-sm bg-white/80 hover:bg-white"
@@ -56,7 +63,7 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
       {/* 2. Content Area */}
       <div className="relative p-2.5 flex flex-col pt-3">
         
-        {/* FLOATING ACTION BUTTON (Overlaps Image) */}
+        {/* Floating Add Button */}
         {isLoggedIn && product.final_price !== null && (
           <div className="absolute -top-4 right-1 z-20">
             <AddToCartButton 
@@ -71,7 +78,7 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
           </div>
         )}
 
-        {/* A. Variant Info (Left side, avoiding the button) */}
+        {/* Variant Info */}
         <div className="min-h-[18px] mb-1.5 pr-[80px]"> 
           {variantLabel && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-gray-100 text-gray-700 border border-gray-200 whitespace-nowrap truncate max-w-full">
@@ -80,14 +87,14 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
           )}
         </div>
 
-        {/* B. Title */}
+        {/* Title */}
         <Link href={`/p/${product.slug}/${product.id}`} className="block mb-2">
           <h3 className="text-xs sm:text-sm font-medium text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        {/* C. Pricing (Sits directly under title) */}
+        {/* Pricing */}
         <div>
           {isLoggedIn && product.final_price !== null ? (
             <PriceDisplay 
@@ -95,13 +102,12 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false 
               originalPrice={product.original_price}
               mrp={product.mrp}
               priceSource={product.price_source}
-              discountLabel={product.discount_label}
+              discountLabel={product.discount_label} 
               savingsPercentage={product.savings_percentage}
               unit={product.unit_name}
               size="sm" 
             />
           ) : (
-            /* GUEST VIEW */
             <div className="flex items-center justify-between mt-1">
               <div className="flex items-center gap-1 text-gray-400">
                 <Lock className="w-3 h-3" />

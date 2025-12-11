@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Tag, Layers, TrendingDown } from "lucide-react";
+import { Tag, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type PriceProps = {
@@ -26,20 +26,36 @@ export default function PriceDisplay({
   className 
 }: PriceProps) {
   
+  // UPDATED SIZES: Larger Strikethrough, Larger Final Price
   const s = {
-    sm: { price: "text-base", sub: "text-[10px]", badge: "text-[9px] px-1 h-4", gap: "gap-0.5" },
-    md: { price: "text-lg", sub: "text-xs", badge: "text-[10px] px-1.5 h-5", gap: "gap-1" },
-    lg: { price: "text-2xl", sub: "text-sm", badge: "text-xs px-2 h-6", gap: "gap-1.5" }
+    sm: { 
+      price: "text-lg",       // Increased from base
+      original: "text-xs",    // Readable but smaller
+      badge: "text-[9px] px-1 h-4", 
+      unit: "text-[10px]" 
+    },
+    md: { 
+      price: "text-xl",       // Increased from lg
+      original: "text-sm", 
+      badge: "text-[10px] px-1.5 h-5", 
+      unit: "text-xs" 
+    },
+    lg: { 
+      price: "text-3xl", 
+      original: "text-lg", 
+      badge: "text-xs px-2 h-6", 
+      unit: "text-sm" 
+    }
   }[size];
 
-  // Logic: Only cross out Original if different from Final
   const isDiscounted = finalPrice < originalPrice;
-  const hasBadges = priceSource === 'sale' || priceSource === 'bulk' || savingsPercentage > 0;
+  // We remove savingsPercentage from here since it's now on the image
+  const hasBadges = priceSource === 'sale' || priceSource === 'bulk';
 
   return (
     <div className={cn("flex flex-col items-start", className)}>
       
-      {/* 1. Badges (Conditionally Rendered Container) */}
+      {/* 1. Badges (RESTORED: Shows Sale Name or Bulk Label) */}
       {hasBadges && (
         <div className="flex flex-wrap items-center gap-1.5 mb-1">
           {priceSource === 'sale' && (
@@ -53,39 +69,35 @@ export default function PriceDisplay({
               <Layers className="w-3 h-3" /> {discountLabel || "Bulk Price"}
             </Badge>
           )}
-
-          {savingsPercentage > 0 && (
-            <span className={cn("font-bold text-green-700 bg-green-50 px-1.5 rounded border border-green-200 flex items-center", s.badge)}>
-              <TrendingDown className="w-3 h-3 mr-0.5" /> {savingsPercentage}% OFF
-            </span>
-          )}
         </div>
       )}
 
-      {/* 2. Main Price Row */}
+      {/* 2. Main Price Row (UPDATED ORDER) */}
       <div className="flex items-baseline flex-wrap gap-x-2 gap-y-0">
-        <div className="flex items-baseline gap-1">
-          <span className={cn("font-bold text-gray-900 leading-none", s.price)}>
-            ₹{finalPrice}
-          </span>
-          {unit && (
-            <span className={cn("text-gray-500 font-medium", s.sub)}>
-              / {unit}
-            </span>
-          )}
-        </div>
         
-        {/* Strikethrough Original Price */}
+        {/* Final Price */}
+        <span className={cn("font-bold text-gray-900 leading-none", s.price)}>
+          ₹{finalPrice}
+        </span>
+
+        {/* Strikethrough (Larger now) */}
         {isDiscounted && (
-          <span className={cn("text-gray-400 line-through decoration-gray-300", s.sub)}>
+          <span className={cn("text-gray-400 line-through decoration-gray-300 font-medium", s.original)}>
             ₹{originalPrice}
+          </span>
+        )}
+
+        {/* Unit (Moved to end) */}
+        {unit && (
+          <span className={cn("text-gray-500 font-medium", s.unit)}>
+            / {unit}
           </span>
         )}
       </div>
 
       {/* 3. MRP Reference Line */}
       {mrp > finalPrice && (
-        <span className={cn("text-gray-400 font-medium mt-0.5", s.sub)}>
+        <span className={cn("text-gray-400 font-medium mt-0.5", s.unit)}>
           MRP: ₹{mrp}
         </span>
       )}

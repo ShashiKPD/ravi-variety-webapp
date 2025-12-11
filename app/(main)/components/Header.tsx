@@ -68,6 +68,7 @@ export default function Header({
   const isContextPage = pathname?.startsWith("/p/") || pathname?.startsWith("/category/");
   const isAdminPage = pathname?.startsWith("/admin");
   const isAdmin = userRole === "admin";
+  const shouldHideDesktopView = pathname.startsWith("/admin/products");
 
   const handleSearch = (query: string) => {
     if (!query.trim()) return;
@@ -170,6 +171,7 @@ export default function Header({
         {/* =======================
             DESKTOP LAYOUT (>= md) 
            ======================= */}
+        {!shouldHideDesktopView && (
         <div className="hidden md:flex items-center justify-between px-4 py-3 gap-6">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
             <div className="w-9 h-9 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
@@ -217,6 +219,7 @@ export default function Header({
           </div>
 
         </div>
+        )}
       </div>
     </header>
   );
