@@ -1,22 +1,21 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { Check, ShieldCheck, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import AddToCartButton from "./product/AddToCartButton";
-import WishlistButton from "./WishlistButton";
-import { ProductPrice, PricingTier } from "@/lib/types";
+import ProductPageActions from "./product/ProductPageActions";
 import { cn } from "@/lib/utils";
+import { ArrowRight } from "lucide-react";
 
 type Props = {
   currentVariant: any;
   sizeVariants: any[];
-  otherTypes: any[];
-  priceData: ProductPrice | null;
-  pricingTiers: PricingTier[];
+  cousinProducts: any[];
+  priceData: any;
+  pricingTiers: any[];
   isWishlisted: boolean;
   userRole: string;
 };
@@ -24,224 +23,185 @@ type Props = {
 export default function ProductInfo({
   currentVariant,
   sizeVariants,
-  otherTypes,
+  cousinProducts,
   priceData,
   pricingTiers,
   isWishlisted,
   userRole,
 }: Props) {
-  const [quantity, setQuantity] = useState<number>(1);
-  const [activeUnitTestPrice, setActiveUnitTestPrice] = useState<number>(0);
-
-  const currentMrp = priceData && priceData.mrp ? priceData.mrp : 0;
+  // 1. Single Source of Truth for Quantity
+  const [qty, setQty] = useState(1);
   const isAnonymous = userRole === "anon";
-  const hasAccess = !!priceData;
 
-  // 1. FORCE SCROLL TO TOP
-  // This ensures that whenever a new variant loads, the page jumps to the top
   useEffect(() => {
-    window.scrollTo(0, 0);
+    setQty(1);
   }, [currentVariant.id]);
 
-  // 2. Price Calculation Logic
-  useEffect(() => {
-    if (!priceData) return;
-    let finalPrice = priceData.sale_price || priceData.unit_price;
+  // 2. Active Price Logic
+  const activePrice = useMemo(() => {
+    if (!priceData) return 0;
+    let final = priceData.final_price; 
 
     if (pricingTiers && pricingTiers.length > 0) {
-      const applicableTier = [...pricingTiers]
-        .sort((a, b) => b.min_quantity - a.min_quantity)
-        .find((t) => quantity >= t.min_quantity);
-
-      if (applicableTier) {
-        finalPrice = applicableTier.unit_price;
+      const tier = [...pricingTiers].reverse().find(t => qty >= t.min_quantity);
+      if (tier && tier.unit_price < final) {
+         final = tier.unit_price;
       }
     }
-    setActiveUnitTestPrice(finalPrice);
-  }, [quantity, priceData, pricingTiers]);
+    return final;
+  }, [qty, priceData, pricingTiers]);
 
-  const processedTiers = useMemo(() => {
-    if (!pricingTiers || pricingTiers.length === 0) return [];
-    
-    return pricingTiers.map((tier, index) => {
-      const nextTier = pricingTiers[index + 1];
-      const rangeLabel = nextTier 
-        ? `${tier.min_quantity}-${nextTier.min_quantity - 1}`
-        : `${tier.min_quantity}+`;
-
-      const tierMrp = tier.mrp || 0;
-      const margin = tierMrp > 0
-        ? Math.round(((tierMrp - tier.unit_price) / tierMrp) * 100) 
-        : 0;
-
-      return { ...tier, rangeLabel, margin };
-    });
-  }, [pricingTiers]);
+  const basePrice = priceData?.original_price || 0; 
+  const mrp = priceData?.mrp || 0;
+  const isDiscounted = activePrice < basePrice;
 
   return (
-    <div className="flex flex-col h-full font-sans pb-32 lg:pb-0">
+    <div className="flex flex-col h-full font-sans pb-24 lg:pb-0">
       
-      {/* HEADER */}
-      <div className="mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+      {/* 1. Header */}
+      <div className="mb-6">
+        <Link href={`/search?brands=${currentVariant.brand_slug}`} className="text-xs font-bold text-blue-600 uppercase tracking-wider hover:underline mb-2 inline-block">
+          {currentVariant.brand_name}
+        </Link>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-3">
           {currentVariant.name}
         </h1>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-gray-500">SKU: {currentVariant.sku}</span>
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border">
+            <span className="font-mono text-xs">SKU: {currentVariant.sku}</span>
+          </div>
+          <span className="text-gray-300">|</span>
           {currentVariant.stock_quantity > 0 ? (
-            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">In Stock</Badge>
-          ) : (
-            <Badge variant="destructive">Out of Stock</Badge>
-          )}
+            <span className="text-green-700 font-medium flex items-center gap-1">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              In Stock 
+              {/* ({currentVariant.stock_quantity}) */}
+            </span>
+          ) : <Badge variant="destructive">Out of Stock</Badge>}
         </div>
       </div>
 
-      <Separator className="mb-6" />
-
-      {/* PRICE DISPLAY (Only for Logged In) */}
-      {!isAnonymous && hasAccess && (
-        <div className="mb-6">
+      {/* 2. Pricing & Bulk Table */}
+      <div className="bg-gray-50/50 -mx-6 px-6 py-6 border-y border-gray-100 mb-8">
+        {isAnonymous ? (
+          <div className="flex items-center justify-between p-4 bg-white border rounded-lg shadow-sm">
+            <div>
+              <p className="font-bold text-gray-900">Wholesale Pricing</p>
+              <p className="text-xs text-gray-500">Login to view prices</p>
+            </div>
+            <Button asChild variant="outline" size="sm"><Link href="/login">Login Now</Link></Button>
+          </div>
+        ) : (
           <div>
-            <div className="flex items-baseline gap-3 mb-1">
-              <span className="text-4xl font-bold text-gray-900">₹{activeUnitTestPrice}</span>
-              {currentMrp > activeUnitTestPrice && (
-                 <span className="text-lg text-gray-400 line-through">₹{currentMrp}</span>
+            <div className="flex items-end gap-3 mb-2 flex-wrap">
+              <span className="text-4xl font-extrabold text-gray-900 tracking-tight">₹{activePrice}</span>
+              {isDiscounted && <span className="text-xl text-gray-400 line-through font-medium mb-1 decoration-gray-300">₹{basePrice}</span>}
+              {mrp > basePrice && <span className="text-sm text-gray-400 font-medium mb-2 ml-1">(MRP: <span className="line-through">₹{mrp}</span>)</span>}
+              {isDiscounted && (
+                <div className="mb-2"><Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">{Math.round(((basePrice - activePrice) / basePrice) * 100)}% Saved</Badge></div>
               )}
             </div>
-            <p className="text-sm text-gray-500">Price per unit (incl. taxes)</p>
-          </div>
-        </div>
-      )}
+            <div className="w-full text-xs text-gray-500 font-medium mt-1">
+               Price for <strong>{qty}</strong> {qty === 1 ? 'unit' : 'units'} (incl. taxes)
+            </div>
 
-      {/* 1. SIZE VARIANTS */}
-      {sizeVariants.length > 1 && (
-        <div className="mb-8">
-          <h3 className="text-sm font-bold text-gray-900 mb-3">Select Size</h3>
-          <div className="flex flex-wrap gap-2">
-            {sizeVariants.map((variant: any) => {
-               const isActive = variant.id === currentVariant.id;
-               return (
-                 <Link key={variant.id} href={`/p/${variant.slug}/${variant.id}`}>
-                    <div className={cn(
-                        "px-4 py-2 text-sm font-medium rounded-lg border transition-all",
-                        isActive 
-                          ? "bg-black text-white border-black shadow-md" 
-                          : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
-                      )}>
-                      {variant.options?.size || variant.name}
-                    </div>
-                 </Link>
-               );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* 2. OTHER VARIETIES (COUSINS) */}
-      {otherTypes && otherTypes.length > 0 && (
-        <div className="mb-8">
-          <h3 className="text-sm font-bold text-gray-900 mb-3">Similar Products</h3>
-          <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 no-scrollbar scroll-smooth">
-            {otherTypes.map((type: any) => (
-              <Link 
-                key={type.product_id} 
-                href={`/p/${type.slug}/${type.default_variant_id}`}
-                className="shrink-0 group"
-              >
-                 <div className="w-24 flex flex-col gap-2">
-                   <div className="w-24 h-24 rounded-lg border bg-white p-1 relative overflow-hidden group-hover:border-blue-500 group-hover:shadow-md transition-all">
-                     <img 
-                        src={type.thumbnail_url || "/placeholder.png"} 
-                        alt={type.name} 
-                        className="w-full h-full object-contain mix-blend-multiply"
-                     />
-                   </div>
-                   <span className="text-xs text-center font-medium text-gray-600 leading-tight line-clamp-2 group-hover:text-blue-600">
-                      {type.name}
-                   </span>
-                 </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ACTION BAR (Only for Logged In) */}
-      {!isAnonymous && hasAccess && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50 lg:static lg:border-none lg:shadow-none lg:p-0 lg:mb-8">
-          <div className="flex gap-4 max-w-7xl mx-auto lg:mx-0">
-             <div className="w-24 shrink-0">
-               <Input 
-                 type="number" 
-                 min={1} 
-                 value={quantity} 
-                 onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                 className="text-center h-11 font-medium text-lg"
-               />
-             </div>
-             <div className="flex-1 min-w-0">
-                <AddToCartButton 
-                  productId={currentVariant.id} 
-                  initialQty={quantity}
-                  className="h-11 text-base font-medium w-full"
-                />
-             </div>
-             <div className="flex-none">
-                <WishlistButton 
-                  productId={currentVariant.id} 
-                  isInitiallyWishlisted={isWishlisted} 
-                  className="h-11 w-11 rounded-md border-gray-300 [&_svg]:h-6 [&_svg]:w-6"
-                />
-             </div>
-          </div>
-        </div>
-      )}
-
-      {/* 3. BUY IN BULK TABLE (Only for Logged In) */}
-      {!isAnonymous && processedTiers.length > 1 && (
-        <div className="mb-8 mt-4 p-5 bg-gray-50 rounded-xl border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-4 text-base">Buy In Bulk</h3>
-          
-          <div className="grid grid-cols-3 gap-4 mb-2 text-sm text-gray-400 font-medium">
-            <div>Quantity</div>
-            <div>Price</div>
-            <div>Margin</div>
-          </div>
-
-          <div className="space-y-3">
-            {processedTiers.map((tier) => {
-              const isActive = quantity >= tier.min_quantity && 
-                (!pricingTiers.find(t => t.min_quantity > tier.min_quantity) || 
-                  quantity < pricingTiers.find(t => t.min_quantity > tier.min_quantity)!.min_quantity);
-
-              return (
-                <div 
-                  key={tier.min_quantity} 
-                  className={cn(
-                    "grid grid-cols-3 gap-4 text-sm py-1 transition-colors duration-200",
-                    isActive ? "font-bold text-blue-700" : "font-medium text-gray-700"
-                  )}
-                >
-                  <div>{tier.rangeLabel}</div>
-                  <div>₹{tier.unit_price}</div>
-                  <div className={cn(isActive ? "text-blue-700" : "text-gray-900")}>
-                    {tier.margin}%
-                  </div>
+            {/* Bulk Selector */}
+            {pricingTiers.length > 0 && (
+              <div className="mt-5 overflow-hidden rounded-lg border border-blue-100 bg-white shadow-sm ring-1 ring-black/5">
+                <div className="bg-blue-50/50 px-4 py-2 text-xs font-bold text-blue-800 uppercase tracking-wide border-b border-blue-100 flex justify-between items-center">
+                  <span>Buy More, Save More</span>
+                  <span className="text-[10px] text-blue-600 font-normal normal-case">Select quantity below</span>
                 </div>
-              );
-            })}
+                <div className="flex divide-x divide-gray-100">
+                  {pricingTiers.map((tier: any, index: number) => {
+                    const nextTier = pricingTiers[index + 1];
+                    const isActive = qty >= tier.min_quantity && (!nextTier || qty < nextTier.min_quantity);
+                    return (
+                      <button
+                        key={tier.min_quantity} 
+                        type="button"
+                        onClick={() => setQty(tier.min_quantity)} // UPDATES PARENT STATE
+                        className={cn("flex-1 p-3 text-center transition-all duration-200 focus:outline-none relative", isActive ? "bg-blue-600 text-white shadow-inner" : "hover:bg-blue-50 bg-white text-gray-900")}
+                      >
+                        <div className={cn("text-xs mb-1 font-medium", isActive ? "text-blue-100" : "text-gray-500")}>Qty {tier.min_quantity}+</div>
+                        <div className="text-sm font-bold tracking-tight">₹{tier.unit_price}</div>
+                        {isActive && <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-white rounded-full" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* DESCRIPTION (Visible to All) */}
-      <div className="pt-6 border-t">
-         <h3 className="text-lg font-bold mb-3">About this item</h3>
-         <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-line">
-           {currentVariant.description}
-         </p>
+        )}
       </div>
 
+      {/* 3. Variants & Cousins */}
+      <div className="space-y-6 flex-1">
+        {sizeVariants.length > 1 && (
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">Pack Size</h3>
+            <div className="flex flex-wrap gap-2">
+              {sizeVariants.map((v: any) => (
+                <Link key={v.id} href={`/p/${v.slug}/${v.id}`} scroll={false} className={cn("px-4 py-2 text-sm font-medium rounded-md border transition-all relative overflow-hidden", v.id === currentVariant.id ? "border-black bg-black text-white shadow-md" : "bg-white border-gray-200 text-gray-700 hover:border-gray-300")}>
+                  {v.size || v.pack_size}
+                  {v.id === currentVariant.id && <div className="absolute bottom-0 right-0 w-2 h-2 bg-white transform translate-x-1 translate-y-1 rotate-45" />}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {cousinProducts && cousinProducts.length > 0 && (
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 mb-3">Available Varieties</h3>
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+              <div className="aspect-square rounded-lg border-2 border-blue-600 bg-white p-1 relative shadow-sm">
+                <Image src={currentVariant.image_urls?.[0] || "/placeholder.png"} alt={currentVariant.name} fill className="object-contain p-1" />
+                <div className="absolute inset-0 bg-blue-600/5 flex items-center justify-center"><Check className="w-5 h-5 text-blue-600 drop-shadow-sm" /></div>
+              </div>
+              {cousinProducts.map((p: any) => (
+                <Link key={p.product_id} href={`/p/${p.slug}/${p.product_id}`} className="group relative aspect-square rounded-lg border border-gray-200 bg-white p-1 hover:border-blue-400 hover:shadow-md transition-all block">
+                  <Image src={p.image_url || "/placeholder.png"} alt={p.name} fill className="object-contain p-1 mix-blend-multiply group-hover:scale-105 transition-transform" />
+                  {p.size_matched && <div className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full ring-2 ring-white" />}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Action Bar (Single Source of Truth) */}
+      {!isAnonymous && (
+        <div className="mt-8">
+          <ProductPageActions 
+            productId={currentVariant.id}
+            stock={currentVariant.stock_quantity}
+            name={currentVariant.name}
+            imageUrl={currentVariant.image_urls?.[0]}
+            price={activePrice}
+            packSize={currentVariant.pack_size || 1}
+            isWishlisted={isWishlisted}
+            isLoggedIn={!isAnonymous}
+            qty={qty} // Passing state down
+            onQtyChange={setQty} // Passing setter down
+          />
+        </div>
+      )}
+
+      {/* 5. Trust & Brand Footer */}
+      <div className="mt-8 pt-6 border-t border-gray-100">
+        <div className="flex gap-6 mb-8 text-xs text-gray-500">
+          <div className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-blue-600" /> Fast Delivery</div>
+          <div className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-green-600" /> Genuine Product</div>
+        </div>
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-xl p-4 text-white flex items-center justify-between shadow-lg">
+          <div><p className="text-xs text-gray-400 font-medium uppercase tracking-widest">More from</p><p className="text-lg font-bold">{currentVariant.brand_name}</p></div>
+          <Button asChild variant="secondary" className="text-gray-900 font-bold hover:bg-gray-100">
+            <Link href={`/search?brands=${currentVariant.brand_slug}`}>Explore Range <ArrowRight className="w-4 h-4 ml-2" /></Link>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
