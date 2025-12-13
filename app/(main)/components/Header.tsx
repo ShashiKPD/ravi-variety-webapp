@@ -65,11 +65,12 @@ export default function Header({
   const router = useRouter();
   const pathname = usePathname();
 
-  const isContextPage = pathname?.startsWith("/p/") || pathname?.startsWith("/category/");
+  const isContextPage = pathname?.startsWith("/category/");
   const isAdminPage = pathname?.startsWith("/admin");
   const isAdmin = userRole === "admin";
   const shouldHideDesktopView = pathname.startsWith("/admin/products");
-
+  const shouldHideMobileView = pathname.startsWith("/p/");
+  
   const handleSearch = (query: string) => {
     if (!query.trim()) return;
     router.push(`/search?q=${encodeURIComponent(query)}`);
@@ -101,72 +102,74 @@ export default function Header({
         {/* =======================
             MOBILE LAYOUT (< md) 
            ======================= */}
-        <div className="md:hidden">
-          {isContextPage ? (
-            /* CONTEXT MODE: [Back] [Search] [Cart] */
-            <div className="flex items-center gap-3 px-4 py-3">
-              <button 
-                onClick={() => router.back()} 
-                className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
+        {!shouldHideMobileView && (
+          <div className="md:hidden">
+            {isContextPage ? (
+              /* CONTEXT MODE: [Back] [Search] [Cart] */
+              <div className="flex items-center gap-3 px-4 py-3">
+                <button 
+                  onClick={() => router.back()} 
+                  className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
 
-              <div className="flex-1">
-                <Suspense fallback={<div className="h-10 bg-gray-100 rounded-full w-full animate-pulse" />}>
-                  <SearchBar onSearch={handleSearch} />
-                </Suspense>
-              </div>
-
-              <Link href="/cart" className="relative p-2 text-gray-700">
-                <ShoppingCart className="w-6 h-6" />
-                {cartCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white min-w-[18px] text-center">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
-            </div>
-          ) : (
-            /* DEFAULT MODE: [Logo] [Avatar] + [Search Row] */
-            <div className="flex flex-col gap-2 pb-3 pt-3 px-4">
-              <div className="flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">
-                    R
-                  </div>
-                  <span className="font-bold text-blue-700 text-lg">Ravi Variety</span>
-                </Link>
-
-                <div className="flex items-center gap-3">
-                  {isAdmin && (
-                    <Link href="/admin">
-                      <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">Admin</Badge>
-                    </Link>
-                  )}
-                  
-                  {userRole !== "anon" ? (
-                    <Link href="/account/">
-                      <UserAvatar />
-                    </Link>
-                  ) : (
-                    <Link href="/login" className="text-blue-600 font-medium text-sm">
-                      Login
-                    </Link>
-                  )}
-                </div>
-              </div>
-
-              {!isAdminPage && (
-                <div className="mt-1">
+                <div className="flex-1">
                   <Suspense fallback={<div className="h-10 bg-gray-100 rounded-full w-full animate-pulse" />}>
                     <SearchBar onSearch={handleSearch} />
                   </Suspense>
                 </div>
-              )}
-            </div>
-          )}
-        </div>
+
+                <Link href="/cart" className="relative p-2 text-gray-700">
+                  <ShoppingCart className="w-6 h-6" />
+                  {cartCount > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white min-w-[18px] text-center">
+                      {cartCount}
+                    </span>
+                  )}
+                </Link>
+              </div>
+            ) : (
+              /* DEFAULT MODE: [Logo] [Avatar] + [Search Row] */
+              <div className="flex flex-col gap-2 pb-3 pt-3 px-4">
+                <div className="flex items-center justify-between">
+                  <Link href="/" className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">
+                      R
+                    </div>
+                    <span className="font-bold text-blue-700 text-lg">Ravi Variety</span>
+                  </Link>
+
+                  <div className="flex items-center gap-3">
+                    {isAdmin && (
+                      <Link href="/admin">
+                        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">Admin</Badge>
+                      </Link>
+                    )}
+                    
+                    {userRole !== "anon" ? (
+                      <Link href="/account/">
+                        <UserAvatar />
+                      </Link>
+                    ) : (
+                      <Link href="/login" className="text-blue-600 font-medium text-sm">
+                        Login
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                {!isAdminPage && (
+                  <div className="mt-1">
+                    <Suspense fallback={<div className="h-10 bg-gray-100 rounded-full w-full animate-pulse" />}>
+                      <SearchBar onSearch={handleSearch} />
+                    </Suspense>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* =======================
             DESKTOP LAYOUT (>= md) 

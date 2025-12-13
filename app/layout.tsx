@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Nunito } from "next/font/google";
 import { CartProvider } from "@/lib/context/CartContext";
 import FloatingCartBar from "@/app/(main)/components/cart/FloatingCartBar";
-import { Toaster } from "sonner"; // <--- 1. Import Toaster
+import { Toaster } from "sonner";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const nunito = Nunito({ 
+  subsets: ["latin"],
+  weight: ["300", "400", "600", "700", "800"] 
+});
 
 export const metadata = {
   title: "Ravi Variety",
@@ -19,7 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={nunito.className}>
         <CartProvider>
           {children}
           <FloatingCartBar />

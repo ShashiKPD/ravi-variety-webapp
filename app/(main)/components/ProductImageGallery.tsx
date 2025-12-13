@@ -46,12 +46,12 @@ export default function ProductImageGallery({ images, title }: Props) {
     <div className="flex flex-col gap-4">
       
       {/* Main Swipeable Carousel */}
-      <div className="relative aspect-square w-full bg-white rounded-lg border overflow-hidden group">
+      <div className="relative aspect-5/4 md:aspect-square w-full bg-white rounded-lg border overflow-hidden group">
         <Carousel setApi={setApi} className="w-full h-full">
           <CarouselContent>
             {displayImages.map((img, index) => (
               <CarouselItem key={index}>
-                <div className="relative aspect-square w-full h-full flex items-center justify-center p-4">
+                <div className="relative aspect-5/4 md:aspect-square w-full h-full flex items-center justify-center ">
                   <Image
                     src={img}
                     alt={`${title} - View ${index + 1}`}
@@ -84,7 +84,7 @@ export default function ProductImageGallery({ images, title }: Props) {
 
       {/* Thumbnails (Acts as Navigation) */}
       {displayImages.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto p-1 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto p-1 scrollbar-hide max-md:hidden">
           {displayImages.map((img, idx) => (
             <button
               key={idx}
