@@ -123,7 +123,7 @@ export default function FloatingCartBar() {
         </div>
 
         <div className={cn("flex items-center w-full gap-3 transition-all duration-300", isExpanded ? "opacity-100 translate-x-0 delay-200" : "opacity-0 -translate-x-4 pointer-events-none")}>
-          <div className="flex items-center pl-1">
+          <div className="flex items-center">
             <div className="flex -space-x-3">
               {previewItems.map((item) => (
                 <div key={item.id} className="relative w-9 h-9 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm shrink-0">

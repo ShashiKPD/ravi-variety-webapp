@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, ChevronLeft, ScanBarcode } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
+import { cn } from "@/lib/utils";
 
 const ScanToOrder = dynamic(() => import("@/components/scanner/ScanToOrder"), { ssr: false });
 
-// ... (Keep SearchBar Component exactly as is) ...
+// ... (SearchBar remains unchanged) ...
 function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
@@ -48,10 +49,62 @@ function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
   );
 }
 
-// ✅ Updated Props: No user data, just a Slot
 export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  
+  const headerRef = useRef<HTMLElement>(null);
+
+  // We use standard useEffect/useLayoutEffect for the event listener
+  // But we keep the state in Refs to avoid React Re-renders (Performance)
+  useLayoutEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    let prevScrollY = window.scrollY;
+    let currentTranslateY = 0;
+    let ticking = false;
+
+    const updateHeader = () => {
+      const scrollY = window.scrollY;
+      const headerHeight = header.offsetHeight;
+      
+      // 1. Calculate the raw change in scroll
+      const delta = scrollY - prevScrollY;
+      prevScrollY = scrollY;
+
+      // 2. Accumulate the change (The "Natural" Slide Logic)
+      // Scrolling Down (positive delta) -> subtract from TranslateY (move up)
+      // Scrolling Up (negative delta) -> add to TranslateY (move down)
+      currentTranslateY -= delta;
+
+      // 3. Clamp the value (The "Track" Logic)
+      // Cannot be higher than 0 (Fully Visible)
+      // Cannot be lower than -headerHeight (Fully Hidden)
+      if (currentTranslateY > 0) currentTranslateY = 0;
+      if (currentTranslateY < -headerHeight) currentTranslateY = -headerHeight;
+
+      // 4. Force Reset at Top (Fixes rubber-banding issues)
+      if (scrollY <= 0) {
+        currentTranslateY = 0;
+      }
+
+      // 5. Apply to DOM
+      header.style.transform = `translate3d(0, ${currentTranslateY}px, 0)`;
+      
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(updateHeader);
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const isContextPage = pathname?.startsWith("/category/");
   const isAdminPage = pathname?.startsWith("/admin");
@@ -64,7 +117,16 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100 transition-all duration-200">
+    <header 
+      ref={headerRef}
+      className={cn(
+        "sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100",
+        // Force reset on desktop so the JS logic doesn't hide it on big screens
+        "md:!transform-none"
+      )}
+      // Hardware acceleration hint for smooth sliding
+      style={{ willChange: "transform", transform: "translate3d(0, 0, 0)" }}
+    >
       <div className="max-w-[1400px] mx-auto">
         
         {/* MOBILE LAYOUT (< md) */}
@@ -92,7 +154,7 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
                     <span className="font-bold text-blue-700 text-lg">Ravi Variety</span>
                   </Link>
 
-                  {/* ✅ Inject Slot (Mobile Top Right) */}
+                  {/* Inject Slot */}
                   {authSlot}
                 </div>
 
@@ -125,7 +187,6 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
              </Suspense>
           </div>
 
-          {/* ✅ Inject Slot (Desktop Right) */}
           {authSlot}
         </div>
         )}
