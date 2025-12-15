@@ -117,9 +117,7 @@ export default async function AccountHubPage() {
 
       {/* 3. Logout Button */}
       <div className="pt-4">
-        <LogoutButton 
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-red-200 bg-red-50 text-red-700 font-medium hover:bg-red-100 hover:border-red-300 active:scale-95 transition-all shadow-sm"
-        />
+        <LogoutButton />
       </div>
 
     </div>

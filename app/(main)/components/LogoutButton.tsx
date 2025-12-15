@@ -1,30 +1,55 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { useCart } from "@/lib/context/CartContext";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { LogOut, Loader2 } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
 
-export default function LogoutButton({ className }: { className?: string }) {
-  const [isLoading, setIsLoading] = useState(false);
+export default function LogoutButton() {
+  const { clearCart } = useCart();
+  const router = useRouter();
   const supabase = createClient();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogout = async () => {
-    if (isLoading) return;
     setIsLoading(true);
+    
+    try {
+      // 1. Clear Client State
+      clearCart();
 
-    await supabase.auth.signOut();
-    // Force full page reload to clear client-side cache
-    window.location.href = "/login";
+      // 2. Clear Server Session
+      await supabase.auth.signOut();
+
+      // 3. Redirect
+      router.push("/login?logout=success");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setIsLoading(false); // Only reset if it failed, otherwise we are navigating away
+    }
   };
 
   return (
     <Button 
-      variant="ghost" 
-      onClick={handleLogout} 
-      className={className}
+      variant="destructive" 
+      onClick={handleLogout}
       disabled={isLoading}
+      className="w-full flex items-center gap-2 justify-center"
     >
-      {isLoading ? "Logging out..." : "Logout"}
+      {isLoading ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Signing out...
+        </>
+      ) : (
+        <>
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </>
+      )}
     </Button>
   );
 }

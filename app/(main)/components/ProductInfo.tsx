@@ -7,7 +7,7 @@ import { Check, ShieldCheck, Truck, ArrowRight, AlertCircle, ChevronDown, Chevro
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ProductPageActions from "./product/ProductPageActions";
-import PricingSection from "./product/PricingSection"; // NEW IMPORT
+import PricingSection from "./product/PricingSection";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/context/CartContext"; 
 
@@ -33,7 +33,6 @@ export default function ProductInfo({
   const { items } = useCart(); 
   const isAnonymous = userRole === "anon";
 
-  // Find current quantity in cart
   const cartItem = items.find(i => i.id === currentVariant.id);
   const cartQty = cartItem ? cartItem.qty : 0;
 
@@ -49,13 +48,10 @@ export default function ProductInfo({
   const { activePrice, priceSource, salePrice } = useMemo(() => {
     if (!priceData) return { activePrice: 0, priceSource: 'standard' as const, salePrice: null };
     
-    // 1. Identify Sale Price
-    // If get_effective_price returned source='sale', then final_price IS the sale price
     const hasSale = priceData.price_source === 'sale';
     const effectiveSalePrice = hasSale ? priceData.final_price : Infinity;
 
-    // 2. Identify Bulk Price for current Qty
-    let bulkPrice = priceData.original_price; // Default to base
+    let bulkPrice = priceData.original_price;
     if (pricingTiers && pricingTiers.length > 0) {
       const tier = [...pricingTiers].reverse().find(t => qty >= t.min_quantity);
       if (tier) {
@@ -63,10 +59,6 @@ export default function ProductInfo({
       }
     }
 
-    // 3. Compare: Sale vs Bulk vs Base
-    // Note: get_effective_price already returns the best of (Base vs Sale) for Qty 1.
-    // We just need to check if the Bulk Tier beats the Sale Price.
-    
     let final = bulkPrice;
     let source: 'sale' | 'bulk' | 'standard' = 'standard';
 
@@ -88,7 +80,6 @@ export default function ProductInfo({
   const basePrice = Math.round(priceData?.original_price || 0); 
   const mrp = Math.round(priceData?.mrp || 0);
 
-  // Construct Label
   const pack = currentVariant.pack_size || 1;
   const size = currentVariant.options?.size;
   let variantLabel = null;
@@ -99,10 +90,10 @@ export default function ProductInfo({
   }
 
   return (
-    <div className="flex flex-col h-full font-sans pb-24 lg:pb-0">
+    <div className="flex flex-col h-full font-sans">
       
       {/* 1. HEADER */}
-      <div className="mb-1 sm:mb-5">
+      <div className="mb-2 sm:mb-5">
         <div className="flex justify-between items-start gap-2">
           <div>
             <Link 
@@ -111,7 +102,7 @@ export default function ProductInfo({
             >
               {currentVariant.brand_name}
             </Link>
-            <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 leading-tight mb-2">
+            <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight mb-2">
               {currentVariant.name}
             </h1>
           </div>
@@ -145,7 +136,7 @@ export default function ProductInfo({
         </div>
       </div>
 
-      {/* 2. PRICING SECTION (Extracted) */}
+      {/* 2. PRICING SECTION */}
       <PricingSection 
         isAnonymous={isAnonymous}
         activePrice={activePrice}
@@ -162,7 +153,7 @@ export default function ProductInfo({
       />
 
       {/* 3. DETAILS TOGGLE */}
-      <div className="mb-6 px-1">
+      <div className="px-1 mt-2 sm:mt-4 mb-6 sm:mb-8">
         <button 
           onClick={() => setIsDescOpen(!isDescOpen)}
           className="flex items-center gap-1.5 text-xs sm:text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors group"
@@ -184,6 +175,8 @@ export default function ProductInfo({
 
       {/* 4. SELECTORS */}
       <div className="space-y-5 flex-1">
+        
+        {/* A. Pack Size */}
         {sizeVariants.length > 1 && (
           <div>
             <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">Pack Size</h3>
@@ -191,8 +184,19 @@ export default function ProductInfo({
               {sizeVariants.map((v: any) => {
                 const isActive = v.id === currentVariant.id;
                 const label = v.size || (v.pack_size > 1 ? `Pack of ${v.pack_size}` : "Standard");
+                
                 return (
-                  <Link key={v.id} href={`/p/${v.slug}/${v.id}`} scroll={false} className={cn("px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md border transition-all relative overflow-hidden", isActive ? "border-black bg-black text-white shadow-md" : "bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50")}>
+                  <Link 
+                    key={v.id} 
+                    href={`/p/${v.slug}/${v.id}`}
+                    scroll={false} 
+                    className={cn(
+                      "px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md border transition-all relative overflow-hidden",
+                      isActive 
+                        ? "border-black bg-black text-white shadow-md" 
+                        : "bg-white border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50"
+                    )}
+                  >
                     {label}
                     {isActive && <div className="absolute bottom-0 right-0 w-1.5 h-1.5 bg-white transform translate-x-0.5 translate-y-0.5 rotate-45" />}
                   </Link>
@@ -202,26 +206,74 @@ export default function ProductInfo({
           </div>
         )}
 
+        {/* B. Available Varieties */}
         {cousinProducts && cousinProducts.length > 0 && (
           <div>
-            <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-2">Available Varieties</h3>
-            <div className="grid grid-cols-5 gap-2 sm:gap-3">
-              <div className="flex flex-col gap-1 w-full">
-                <div className="aspect-square rounded-md border-2 border-blue-600 bg-white p-0.5 relative shadow-sm">
+            <h3 className="text-xs sm:text-sm font-bold text-gray-900 mb-3">Available Varieties</h3>
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-x-2 gap-y-5">
+              
+              {/* Current Product */}
+              <div className="flex flex-col gap-1 w-full relative">
+                <div className="aspect-square rounded-md border-2 border-blue-600 bg-white p-1 relative shadow-sm">
                   <Image src={currentVariant.image_urls?.[0] || "/placeholder.png"} alt={currentVariant.name} fill className="object-contain p-1" />
-                  <div className="absolute inset-0 bg-blue-600/5 flex items-center justify-center"><Check className="w-4 h-4 text-blue-600 drop-shadow-sm" /></div>
+                  <div className="absolute inset-0 bg-blue-600/5 flex items-center justify-center"><Check className="w-5 h-5 text-blue-600 drop-shadow-sm" /></div>
                 </div>
-                <span className="text-[10px] text-blue-700 font-bold text-center leading-3 line-clamp-2">{currentVariant.name}</span>
+                <div className="text-center px-1">
+                   <p className="text-[10px] font-bold text-blue-700 leading-tight line-clamp-2 mb-0.5">
+                     {currentVariant.name}
+                   </p>
+                   <p className="text-[9px] text-gray-500 font-medium truncate">
+                     {variantLabel || "Standard"}
+                   </p>
+                </div>
               </div>
-              {cousinProducts.map((p: any) => (
-                <Link key={p.product_id} href={`/p/${p.slug}/${p.product_id}`} className="flex flex-col gap-1 w-full group" title={p.name}>
-                  <div className="relative aspect-square rounded-md border border-gray-200 bg-white p-0.5 group-hover:border-blue-400 group-hover:shadow-md transition-all">
-                    <Image src={p.image_url || "/placeholder.png"} alt={p.name} fill className="object-contain p-1 mix-blend-multiply group-hover:scale-105 transition-transform" />
-                    {p.size_matched && <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-blue-500 rounded-full ring-1 ring-white" />}
-                  </div>
-                  <span className="text-[10px] text-gray-600 font-medium text-center leading-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{p.name}</span>
-                </Link>
-              ))}
+
+              {/* Cousins */}
+              {cousinProducts.map((p: any) => {
+                const cLabel = p.size 
+                  ? (p.pack_size > 1 ? `${p.pack_size}x${p.size}` : p.size) 
+                  : (p.pack_size > 1 ? `Pack of ${p.pack_size}` : null);
+
+                return (
+                  <Link 
+                    key={p.product_id} 
+                    href={`/p/${p.slug}/${p.product_id}`}
+                    className="flex flex-col gap-1 w-full group relative"
+                    title={p.name}
+                  >
+                    <div className="relative aspect-square rounded-md border border-gray-200 bg-white p-1 group-hover:border-blue-400 group-hover:shadow-md transition-all">
+                      <Image 
+                        src={p.image_url || "/placeholder.png"} 
+                        alt={p.name} 
+                        fill 
+                        className="object-contain p-1 mix-blend-multiply group-hover:scale-105 transition-transform" 
+                      />
+                      {p.size_matched && (
+                        <div className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-blue-500 rounded-full ring-1 ring-white" />
+                      )}
+                    </div>
+                    
+                    <div className="text-center px-0.5">
+                      <p className="text-[10px] text-gray-700 font-medium leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors mb-0.5">
+                        {p.name}
+                      </p>
+                      
+                      <div className="text-[9px] text-gray-500 leading-none">
+                        {cLabel && <span className="block mb-0.5 font-semibold text-gray-400">{cLabel}</span>}
+                        
+                        <div className="flex items-center justify-center gap-1 mt-1">
+                          <span className="font-bold text-gray-900">₹{Math.round(p.price || 0)}</span>
+                          {p.mrp > p.price && (
+                            <span className="line-through text-gray-300 decoration-gray-300">
+                              ₹{Math.round(p.mrp)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         )}
@@ -229,7 +281,7 @@ export default function ProductInfo({
 
       {/* 5. ACTION BAR */}
       {!isAnonymous && (
-        <div className="mt-6 lg:mt-8">
+        <div className="lg:mb-4">
           <ProductPageActions 
             productId={currentVariant.id}
             stock={currentVariant.in_stock ? 999 : 0} 
@@ -247,7 +299,7 @@ export default function ProductInfo({
       )}
 
       {/* 6. TRUST & BRAND */}
-      <div className="mt-2 sm:mt-8 pt-0 sm:pt-6 border-t border-gray-100">
+      <div className=" border-t border-gray-100">
         <div className="flex gap-4 sm:gap-6 mb-4 sm:mb-6 text-[10px] sm:text-xs text-gray-500">
           <div className="flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-blue-600" /> Fast Delivery</div>
           <div className="flex items-center gap-1"><ShieldCheck className="w-3.5 h-3.5 text-green-600" /> Genuine Product</div>

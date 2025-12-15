@@ -1,25 +1,28 @@
-import { createClient } from '@/utils/supabase/server'
+import { createClient } from '@/utils/supabase/server';
+import { cache } from 'react';
 
-export async function getUserProfile() {
-  const supabase = await createClient()
+// 'cache' dedupes this request for the duration of a single page render.
+export const getCurrentUser = cache(async () => {
+  const supabase = await createClient();
 
-  const { data: { user } } = await supabase.auth.getUser()
+  // 1. Get User (Security Check)
+  const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return null
+    return { user: null, role: 'anon' };
   }
 
-  // Fetch the profile from the 'profiles' table
+  // 2. Get Profile (Role Check)
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('role') // We only need the role
-    .eq('id', user.id) // Match it to the logged-in user's ID
-    .single() // We expect only one row
+    .select('role')
+    .eq('id', user.id)
+    .single();
 
   if (error || !profile) {
-    console.error('Error fetching user profile:', error?.message)
-    return null
+    // Fallback if profile is missing (shouldn't happen)
+    return { user, role: 'anon' };
   }
 
-  return profile
-}
+  return { user, role: profile.role };
+});

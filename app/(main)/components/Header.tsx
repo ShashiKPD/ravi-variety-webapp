@@ -2,13 +2,12 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image"; // Import Image
+import Image from "next/image";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, ShoppingCart, User as UserIcon, ChevronLeft } from "lucide-react";
+import { Search, ShoppingCart, User as UserIcon, ChevronLeft, ScanBarcode } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScanBarcode } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const ScanToOrder = dynamic(() => import("@/components/scanner/ScanToOrder"), { ssr: false });
@@ -27,30 +26,30 @@ function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
     onSearch(query);
   };
 
-  return (<>
-    <form onSubmit={handleSubmit} className="w-full relative">
-      <Input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Search..."
-        className="w-full pl-9 h-10 bg-gray-100 border-none focus:ring-1 focus:ring-blue-500 font-normal shadow-inner rounded-full"
-      />
-       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-       <button 
-         type="button"
-         onClick={() => setShowScanner(true)}
-         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 p-1 lg:hidden"
-       >
-         <ScanBarcode className="w-5 h-5" />
-       </button>
-    </form>
-    {showScanner && <ScanToOrder onClose={() => setShowScanner(false)} />}
+  return (
+    <>
+      <form onSubmit={handleSubmit} className="w-full relative">
+        <Input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search..."
+          className="w-full pl-9 h-10 bg-gray-100 border-none focus:ring-1 focus:ring-blue-500 font-normal shadow-inner rounded-full"
+        />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <button 
+          type="button"
+          onClick={() => setShowScanner(true)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 p-1 lg:hidden"
+        >
+          <ScanBarcode className="w-5 h-5" />
+        </button>
+      </form>
+      {showScanner && <ScanToOrder onClose={() => setShowScanner(false)} />}
     </>
   );
 }
 
-// UPDATE: Added userAvatar and userName to props
 export default function Header({ 
   userRole, 
   cartCount,
@@ -65,9 +64,12 @@ export default function Header({
   const router = useRouter();
   const pathname = usePathname();
 
+  const isGuest = userRole === "anon";
+  const isAdmin = userRole === "admin";
+  
+  // Conditional Views
   const isContextPage = pathname?.startsWith("/category/");
   const isAdminPage = pathname?.startsWith("/admin");
-  const isAdmin = userRole === "admin";
   const shouldHideDesktopView = pathname.startsWith("/admin/products");
   const shouldHideMobileView = pathname.startsWith("/p/");
   
@@ -76,7 +78,7 @@ export default function Header({
     router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
-  // Helper to render Avatar or Fallback Icon
+  // Helper to render Avatar
   const UserAvatar = () => (
     <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0">
       {userAvatar ? (
@@ -105,7 +107,7 @@ export default function Header({
         {!shouldHideMobileView && (
           <div className="md:hidden">
             {isContextPage ? (
-              /* CONTEXT MODE: [Back] [Search] [Cart] */
+              /* CONTEXT MODE: [Back] [Search] [Cart (if logged in)] */
               <div className="flex items-center gap-3 px-4 py-3">
                 <button 
                   onClick={() => router.back()} 
@@ -120,17 +122,19 @@ export default function Header({
                   </Suspense>
                 </div>
 
-                <Link href="/cart" className="relative p-2 text-gray-700">
-                  <ShoppingCart className="w-6 h-6" />
-                  {cartCount > 0 && (
-                    <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white min-w-[18px] text-center">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
+                {!isGuest && (
+                  <Link href="/cart" className="relative p-2 text-gray-700">
+                    <ShoppingCart className="w-6 h-6" />
+                    {cartCount > 0 && (
+                      <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white min-w-[18px] text-center">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
               </div>
             ) : (
-              /* DEFAULT MODE: [Logo] [Avatar] + [Search Row] */
+              /* DEFAULT MODE: [Logo] [Actions] + [Search Row] */
               <div className="flex flex-col gap-2 pb-3 pt-3 px-4">
                 <div className="flex items-center justify-between">
                   <Link href="/" className="flex items-center gap-2">
@@ -147,13 +151,13 @@ export default function Header({
                       </Link>
                     )}
                     
-                    {userRole !== "anon" ? (
+                    {!isGuest ? (
                       <Link href="/account/">
                         <UserAvatar />
                       </Link>
                     ) : (
-                      <Link href="/login" className="text-blue-600 font-medium text-sm">
-                        Login
+                      <Link href="/login" className="text-gray-400 font-medium text-xs hover:text-blue-600">
+                        Retailer Login
                       </Link>
                     )}
                   </div>
@@ -185,40 +189,44 @@ export default function Header({
           </Link>
 
           <div className="flex-1 max-w-2xl">
-             <Suspense>
+             <Suspense fallback={<div className="h-10 bg-gray-100 rounded-full w-full" />}>
                 <SearchBar onSearch={handleSearch} />
              </Suspense>
           </div>
 
           <div className="flex items-center gap-4">
-            {isAdmin && (
-              <Button variant="ghost" size="sm" asChild className="text-blue-700 hover:bg-blue-50">
-                <Link href="/admin">Admin Panel</Link>
-              </Button>
-            )}
-
-            {userRole !== "anon" ? (
-              <Link href="/account" className="flex items-center gap-2 hover:bg-gray-50 p-1.5 pr-3 rounded-full border border-transparent hover:border-gray-100 transition-all">
-                <UserAvatar />
-                <span className="text-sm font-medium text-gray-700">Account</span>
-              </Link>
+            {isGuest ? (
+               // STEALTH MODE: Subtle login only
+               <Link href="/login" className="text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
+                 Retailer Login
+               </Link>
             ) : (
-              <Button variant="default" size="sm" asChild className="bg-blue-600 hover:bg-blue-700 px-6">
-                <Link href="/login">Login</Link>
-              </Button>
-            )}
+               // RETAILER MODE: Full Access
+               <>
+                 {isAdmin && (
+                   <Button variant="ghost" size="sm" asChild className="text-blue-700 hover:bg-blue-50">
+                     <Link href="/admin">Admin Panel</Link>
+                   </Button>
+                 )}
 
-            <Link href="/cart" className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors border border-gray-100">
-              <div className="relative">
-                <ShoppingCart className="w-5 h-5 text-gray-700" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
-                    {cartCount}
-                  </span>
-                )}
-              </div>
-              <span className="font-medium text-sm text-gray-700">Cart</span>
-            </Link>
+                 <Link href="/account" className="flex items-center gap-2 hover:bg-gray-50 p-1.5 pr-3 rounded-full border border-transparent hover:border-gray-100 transition-all">
+                   <UserAvatar />
+                   <span className="text-sm font-medium text-gray-700">Account</span>
+                 </Link>
+
+                 <Link href="/cart" className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors border border-gray-100">
+                   <div className="relative">
+                     <ShoppingCart className="w-5 h-5 text-gray-700" />
+                     {cartCount > 0 && (
+                       <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
+                         {cartCount}
+                       </span>
+                     )}
+                   </div>
+                   <span className="font-medium text-sm text-gray-700">Cart</span>
+                 </Link>
+               </>
+            )}
           </div>
 
         </div>

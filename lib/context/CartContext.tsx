@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 
 export type LocalCartItem = {
   id: number;
@@ -41,23 +41,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setIsLoaded(true);
   }, []);
 
-  // 2. Save to LocalStorage (FIXED)
+  // 2. Save to LocalStorage
   useEffect(() => {
     if (isLoaded) {
       const prevStorage = localStorage.getItem("local_cart");
-      
-      // LOGIC FIX: 
-      // If the cart is empty AND we have no history in storage, DO NOT write.
-      // This keeps the "New Device" state distinguishable from "Cleared Cart".
       if (items.length === 0 && prevStorage === null) {
         return;
       }
-      
       localStorage.setItem("local_cart", JSON.stringify(items));
     }
   }, [items, isLoaded]);
 
-  const addToCart = (newItem: LocalCartItem) => {
+  // ✅ FIXED: Wrapped in useCallback to prevent infinite loops
+  const addToCart = useCallback((newItem: LocalCartItem) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === newItem.id);
       if (existing) {
@@ -67,9 +63,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, newItem];
     });
-  };
+  }, []);
 
-  const updateQty = (id: number, delta: number) => {
+  // ✅ FIXED: Wrapped in useCallback
+  const updateQty = useCallback((id: number, delta: number) => {
     setItems((prev) => {
       return prev.map((item) => {
         if (item.id === id) {
@@ -78,19 +75,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return item;
       }).filter(item => item.qty > 0); 
     });
-  };
+  }, []);
 
-  const clearCart = () => {
+  // ✅ FIXED: Wrapped in useCallback (The culprit of your crash)
+  const clearCart = useCallback(() => {
     setItems([]);
-    // We explicitly set it to empty array string so history is preserved
     if (typeof window !== "undefined") {
       localStorage.setItem("local_cart", "[]"); 
     }
-  };
+  }, []);
 
-  const replaceCart = (newItems: LocalCartItem[]) => {
+  // ✅ FIXED: Wrapped in useCallback
+  const replaceCart = useCallback((newItems: LocalCartItem[]) => {
     setItems(newItems);
-  };
+  }, []);
 
   const cartCount = items.reduce((acc, item) => acc + item.qty, 0);
   const cartTotal = items.reduce((acc, item) => acc + (item.price * item.qty), 0);

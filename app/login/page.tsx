@@ -1,24 +1,40 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
+import { useCart } from "@/lib/context/CartContext"; // ✅ Import Cart Context
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, ArrowRight } from "lucide-react";
+import { toast } from "sonner"; // Assuming you use Sonner for toasts
 
 function LoginForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const supabase = createClient();
-  
+  const { clearCart } = useCart(); // ✅ Access clear action
+
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(searchParams.get("error"));
+
+  // ✅ 1. DETECT LOGOUT SIGNAL
+  useEffect(() => {
+    if (searchParams.get("logout") === "success") {
+      clearCart(); // Wipe the context
+      toast.info("Logged out successfully");
+      
+      // Clean the URL so a refresh doesn't trigger it again (optional)
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("logout");
+      router.replace(`/login?${newParams.toString()}`);
+    }
+  }, [searchParams, clearCart, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +42,16 @@ function LoginForm() {
     setLoading(true);
 
     const cleanPhone = phone.trim();
-    const formattedPhone = cleanPhone.startsWith("+91") ? cleanPhone : `+91${cleanPhone}`;
+    // Robust Format: If user typed 12 digits (9198...), handle it. If 10, add +91.
+    let formattedPhone = cleanPhone;
+    if (cleanPhone.length === 10) {
+      formattedPhone = `+91${cleanPhone}`;
+    } else if (cleanPhone.length === 12 && cleanPhone.startsWith("91")) {
+      formattedPhone = `+${cleanPhone}`;
+    } else if (!cleanPhone.startsWith("+")) {
+       // Fallback for weird inputs, assume +91
+       formattedPhone = `+91${cleanPhone}`;
+    }
 
     const { error: authError } = await supabase.auth.signInWithPassword({
       phone: formattedPhone,
@@ -37,21 +62,21 @@ function LoginForm() {
       setError("Invalid Phone Number or Password");
       setLoading(false);
     } else {
+      // 2. Refresh Context & Router to ensure Middleware runs
+      router.refresh(); 
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       if (user) {
-        // 1. Check for 'next' param (e.g. /orders/ORD-123)
         const nextUrl = searchParams.get("next");
         const safeNextUrl = nextUrl && nextUrl.startsWith("/") ? nextUrl : null;
 
-        // 2. Fetch Profile for Role checks
         const { data: profile } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", user.id)
           .single();
 
-        // 3. Determine Redirect Destination
         if (safeNextUrl) {
           router.push(safeNextUrl);
         } else if (profile?.role === "admin") {
@@ -60,7 +85,6 @@ function LoginForm() {
           router.push("/");
         }
       } else {
-        // Fallback (should theoretically not happen if authError was null)
         router.push("/");
       }
     }
@@ -87,10 +111,10 @@ function LoginForm() {
                 value={phone}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, "");
-                  if (val.length <= 10) setPhone(val);
+                  // Allow up to 12 digits (to support 91 prefix typing)
+                  if (val.length <= 12) setPhone(val);
                 }}
                 required
-                // Lighter placeholder text
                 className="border-none shadow-none focus-visible:ring-0 rounded-none h-10 tracking-widest text-lg placeholder:text-gray-300"
               />
             </div>
@@ -142,7 +166,6 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    // min-h-[100dvh] handles mobile browser UI better than min-h-screen
     <div className="flex items-center justify-center min-h-[100dvh] bg-gray-50 px-4">
       <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-blue-600" />}>
         <LoginForm />

@@ -64,7 +64,7 @@ export default function PricingSection({
   const showSaleBadge = priceSource === 'sale';
 
   return (
-    <div className="bg-gray-50/50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 border-y border-gray-100 mb-4">
+    <div className="bg-gray-50/50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 border-y border-gray-100">
       <div>
         
         {/* A. PRICE HEADER */}
@@ -105,7 +105,7 @@ export default function PricingSection({
         
         {/* B. TOTAL PRICE LINE (Only if Bulk Tiers exist) */}
         {pricingTiers.length > 1 && (
-          <div className="w-full text-[10px] sm:text-xs text-gray-500 font-medium mt-3 flex justify-between items-center border-t border-gray-200 pt-2">
+          <div className="w-full text-[10px] sm:text-xs text-gray-500 font-medium mt-1 flex justify-between items-center border-t border-gray-200 pt-2">
              <span className="flex items-center gap-1">
                Total: <span className="font-bold text-gray-900 text-sm">₹{(activePrice * qty).toLocaleString()}</span> 
                <span className="text-gray-400">({qty} {qty === 1 ? 'unit' : 'units'})</span>

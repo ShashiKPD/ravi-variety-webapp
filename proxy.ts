@@ -1,11 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
+    request: { headers: request.headers },
   });
 
   const supabase = createServerClient(
@@ -13,72 +11,63 @@ export async function proxy(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return request.cookies.get(name)?.value;
-        },
-        set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({ name, value, ...options });
+        getAll() { return request.cookies.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            request.cookies.set(name, value)
+          );
           response = NextResponse.next({
             request: { headers: request.headers },
           });
-          response.cookies.set({ name, value, ...options });
-        },
-        remove(name: string, options: CookieOptions) {
-          request.cookies.set({ name, value: "", ...options });
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          });
-          response.cookies.set({ name, value: "", ...options });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
         },
       },
     }
   );
 
-  // 1. Get User (Network Call #1 - Unavoidable for security)
-  const { data: { user } } = await supabase.auth.getUser();
-
   const url = request.nextUrl.clone();
-  const pathname = url.pathname;
-
-  // 2. Auth Protection Logic
   
-  // A. Admin Routes Protection
-  if (pathname.startsWith("/admin")) {
-    if (!user) {
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+  // 1. DEFINE PROTECTED ROUTES
+  // These are the ONLY paths where we demand to know who the user is immediately.
+  const sensitiveRoutes = ["/admin", "/account", "/checkout", "/cart"];
+  const isSensitivePage = sensitiveRoutes.some(path => url.pathname.startsWith(path));
+  const isLoginPage = url.pathname === "/login";
+
+  // 2. LAZY AUTH CHECK
+  // We only fetch the user if we are on a sensitive page or the login page.
+  // FOR ALL OTHER PAGES (Home, Products, etc.), WE SKIP THIS.
+  if (isSensitivePage || isLoginPage) {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (isSensitivePage) {
+      if (!user) {
+        url.pathname = "/login";
+        return NextResponse.redirect(url);
+      }
+      
+      // Admin Guard
+      if (url.pathname.startsWith("/admin")) {
+        const role = user.user_metadata?.role;
+        if (role !== "admin") {
+          url.pathname = "/";
+          return NextResponse.redirect(url);
+        }
+      }
     }
 
-    // OPTIMIZATION: Check role from Metadata instead of DB Call #2
-    // We assume 'role' is synced to user_metadata on creation/update.
-    const userRole = user.user_metadata?.role;
-
-    if (userRole !== "admin") {
-      // Not an admin? Kick them to home.
+    if (isLoginPage && user) {
       url.pathname = "/";
       return NextResponse.redirect(url);
     }
   }
 
-  // B. Redirect Logged-In Users away from Login page
-  if (pathname === "/login" && user) {
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
-
-  // C. Update Session (Important for scrolling sessions)
   return response;
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public folder assets (images, etc)
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -11,7 +11,8 @@ export async function GET(request: NextRequest) {
     await supabase.auth.signOut();
   }
 
-  // Redirect to login with a message
+  // Redirect to login with a specific 'logout' signal
   const requestUrl = new URL(request.url);
-  return NextResponse.redirect(`${requestUrl.origin}/login?error=Your account has been disabled.`);
+  // We use "logout=success" so the Login page knows to clear the cart
+  return NextResponse.redirect(`${requestUrl.origin}/login?logout=success`);
 }

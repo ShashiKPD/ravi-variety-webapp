@@ -9,6 +9,7 @@ type Props = {
   productId: number;
   inStock: boolean;
   packSize?: number;
+  size?: "sm" | "md";
   className?: string;
   // New props needed for Local Cart Context
   name: string;
@@ -20,6 +21,7 @@ export default function AddToCartButton({
   productId,
   inStock,
   packSize = 1,
+  size = "md",
   className,
   name,
   imageUrl,
@@ -68,19 +70,19 @@ export default function AddToCartButton({
         <button
           onClick={(e) => handleUpdateQty(e, -1)}
           // w-8 ensures a good touch target, flex-none prevents squishing
-          className="h-full w-8 flex-none flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 hover:text-white active:text-white transition-colors disabled:opacity-50 "
+          className={`${size === "sm" ? "w-6" : "w-8"} h-full flex-none flex items-center justify-center hover:bg-blue-400 active:bg-blue-500 hover:text-white active:text-white transition-colors disabled:opacity-50 `}
         >
           <Minus className="w-3 h-3" strokeWidth={3} />
         </button>
         
         {/* Qty takes remaining space, but is tight */}
-        <span className="flex-1 min-w-[20px] text-center text-xs font-bold truncate select-none leading-none px-1">
+        <span className="flex-1 min-w-[20px] text-center text-xs font-bold truncate select-none leading-none "> 
           {qty}
         </span>
         
         <button
           onClick={(e) => handleUpdateQty(e, 1)}
-          className="h-full w-8 flex-none flex items-center justify-center hover:bg-blue-700 active:bg-blue-800 hover:text-white active:text-white transition-colors disabled:opacity-50 "
+          className={`${size === "sm" ? "w-6" : "w-8"} h-full flex-none flex items-center justify-center hover:bg-blue-400 active:bg-blue-500 hover:text-white active:text-white transition-colors disabled:opacity-50 `}
         >
           <Plus className="w-3 h-3" strokeWidth={3} />
         </button>
