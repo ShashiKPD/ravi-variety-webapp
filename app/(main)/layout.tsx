@@ -1,5 +1,7 @@
-import HeaderWrapper from "./components/HeaderWrapper";
-import MobileBottomNav from "./components/MobileBottomNav"; // Import directly
+import { Suspense } from "react";
+import Header from "./components/Header";
+import AuthButtons from "./components/AuthButtons"; // The new server component
+import MobileBottomNav from "./components/MobileBottomNav";
 
 export default function MainLayout({
   children,
@@ -9,8 +11,17 @@ export default function MainLayout({
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       
-      {/* Dynamic Header (Streams in) */}
-      <HeaderWrapper />
+      {/* ✅ HEADER COMPOSITION 
+         1. <Header> renders instantly (Client Component)
+         2. authSlot streams in asynchronously (Server Component)
+      */}
+      <Header 
+        authSlot={
+          <Suspense fallback={<div className="h-[33.5px] w-24 bg-gray-100 rounded-full animate-pulse" />}>
+            <AuthButtons />
+          </Suspense>
+        }
+      />
 
       <main className="flex-1 pb-16 md:pb-0">
         {children}
@@ -20,7 +31,6 @@ export default function MainLayout({
         <p>© 2025 Ravi Variety. All rights reserved.</p>
       </footer>
 
-      {/* Static Footer (Instant Render) */}
       <MobileBottomNav />
       
     </div>

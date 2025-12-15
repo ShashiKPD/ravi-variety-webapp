@@ -2,16 +2,14 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, ShoppingCart, User as UserIcon, ChevronLeft, ScanBarcode } from "lucide-react";
+import { Search, ChevronLeft, ScanBarcode } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import dynamic from "next/dynamic";
 
 const ScanToOrder = dynamic(() => import("@/components/scanner/ScanToOrder"), { ssr: false });
 
+// ... (Keep SearchBar Component exactly as is) ...
 function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
@@ -50,24 +48,11 @@ function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
   );
 }
 
-export default function Header({ 
-  userRole, 
-  cartCount,
-  userAvatar,
-  userName
-}: { 
-  userRole: string; 
-  cartCount: number;
-  userAvatar: string | null;
-  userName: string | null;
-}) {
+// ✅ Updated Props: No user data, just a Slot
+export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  const isGuest = userRole === "anon";
-  const isAdmin = userRole === "admin";
-  
-  // Conditional Views
   const isContextPage = pathname?.startsWith("/category/");
   const isAdminPage = pathname?.startsWith("/admin");
   const shouldHideDesktopView = pathname.startsWith("/admin/products");
@@ -78,36 +63,14 @@ export default function Header({
     router.push(`/search?q=${encodeURIComponent(query)}`);
   };
 
-  // Helper to render Avatar
-  const UserAvatar = () => (
-    <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0">
-      {userAvatar ? (
-        <Image 
-          src={userAvatar} 
-          alt={userName || "User"} 
-          fill 
-          className="object-cover"
-          sizes="32px"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-gray-400">
-          <UserIcon className="w-5 h-5" />
-        </div>
-      )}
-    </div>
-  );
-
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-100 transition-all duration-200">
       <div className="max-w-[1400px] mx-auto">
         
-        {/* =======================
-            MOBILE LAYOUT (< md) 
-           ======================= */}
+        {/* MOBILE LAYOUT (< md) */}
         {!shouldHideMobileView && (
           <div className="md:hidden">
             {isContextPage ? (
-              /* CONTEXT MODE: [Back] [Search] [Cart (if logged in)] */
               <div className="flex items-center gap-3 px-4 py-3">
                 <button 
                   onClick={() => router.back()} 
@@ -115,52 +78,22 @@ export default function Header({
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </button>
-
                 <div className="flex-1">
                   <Suspense fallback={<div className="h-10 bg-gray-100 rounded-full w-full animate-pulse" />}>
                     <SearchBar onSearch={handleSearch} />
                   </Suspense>
                 </div>
-
-                {!isGuest && (
-                  <Link href="/cart" className="relative p-2 text-gray-700">
-                    <ShoppingCart className="w-6 h-6" />
-                    {cartCount > 0 && (
-                      <span className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white min-w-[18px] text-center">
-                        {cartCount}
-                      </span>
-                    )}
-                  </Link>
-                )}
               </div>
             ) : (
-              /* DEFAULT MODE: [Logo] [Actions] + [Search Row] */
               <div className="flex flex-col gap-2 pb-3 pt-3 px-4">
                 <div className="flex items-center justify-between">
                   <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">
-                      R
-                    </div>
+                    <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
                     <span className="font-bold text-blue-700 text-lg">Ravi Variety</span>
                   </Link>
 
-                  <div className="flex items-center gap-3">
-                    {isAdmin && (
-                      <Link href="/admin">
-                        <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">Admin</Badge>
-                      </Link>
-                    )}
-                    
-                    {!isGuest ? (
-                      <Link href="/account/">
-                        <UserAvatar />
-                      </Link>
-                    ) : (
-                      <Link href="/login" className="text-gray-400 font-medium text-xs hover:text-blue-600">
-                        Retailer Login
-                      </Link>
-                    )}
-                  </div>
+                  {/* ✅ Inject Slot (Mobile Top Right) */}
+                  {authSlot}
                 </div>
 
                 {!isAdminPage && (
@@ -175,9 +108,7 @@ export default function Header({
           </div>
         )}
 
-        {/* =======================
-            DESKTOP LAYOUT (>= md) 
-           ======================= */}
+        {/* DESKTOP LAYOUT (>= md) */}
         {!shouldHideDesktopView && (
         <div className="hidden md:flex items-center justify-between px-4 py-3 gap-6">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
@@ -194,41 +125,8 @@ export default function Header({
              </Suspense>
           </div>
 
-          <div className="flex items-center gap-4">
-            {isGuest ? (
-               // STEALTH MODE: Subtle login only
-               <Link href="/login" className="text-sm font-semibold text-gray-500 hover:text-blue-600 transition-colors">
-                 Retailer Login
-               </Link>
-            ) : (
-               // RETAILER MODE: Full Access
-               <>
-                 {isAdmin && (
-                   <Button variant="ghost" size="sm" asChild className="text-blue-700 hover:bg-blue-50">
-                     <Link href="/admin">Admin Panel</Link>
-                   </Button>
-                 )}
-
-                 <Link href="/account" className="flex items-center gap-2 hover:bg-gray-50 p-1.5 pr-3 rounded-full border border-transparent hover:border-gray-100 transition-all">
-                   <UserAvatar />
-                   <span className="text-sm font-medium text-gray-700">Account</span>
-                 </Link>
-
-                 <Link href="/cart" className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors border border-gray-100">
-                   <div className="relative">
-                     <ShoppingCart className="w-5 h-5 text-gray-700" />
-                     {cartCount > 0 && (
-                       <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white">
-                         {cartCount}
-                       </span>
-                     )}
-                   </div>
-                   <span className="font-medium text-sm text-gray-700">Cart</span>
-                 </Link>
-               </>
-            )}
-          </div>
-
+          {/* ✅ Inject Slot (Desktop Right) */}
+          {authSlot}
         </div>
         )}
       </div>
