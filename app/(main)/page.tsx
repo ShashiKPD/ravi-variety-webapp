@@ -53,9 +53,6 @@ export default async function HomePage() {
     }
   }
 
-  // 2. Data Fetching
-  // FIX: We do NOT pass p_user_role or p_user_id anymore.
-  // The database functions use auth.uid() and get_current_user_role() internally.
   const [
     featuredRes, 
     supercategories, 
@@ -83,7 +80,7 @@ export default async function HomePage() {
       
       <SuperCategoryRail data={supercategories} />
 
-      {user && banners.length > 0 && (
+      {banners.length > 0 && (
            <HeroCarousel banners={banners} />
       )}
 

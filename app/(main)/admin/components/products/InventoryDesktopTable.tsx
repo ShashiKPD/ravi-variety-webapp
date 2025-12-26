@@ -189,7 +189,7 @@ export default function InventoryDesktopTable(props: Props) {
                       <span className="font-medium text-gray-900 text-sm line-clamp-1" title={row.name}>{row.name}</span>
                       <div className="flex flex-wrap gap-1.5 mt-1.5 items-center">
                         <Badge variant="outline" className="text-[10px] h-4 px-1 bg-gray-50 text-gray-600 border-gray-300 rounded-sm font-normal">
-                          {row.pack_size > 1 ? `${row.pack_size}x` : ""}{row.variant_name} {row.unit_name}
+                          {row.pack_size > 1 ? `${row.pack_size} x ` : ""}{row.variant_name} / {row.unit_name}
                         </Badge>
                         <span className="text-[10px] text-gray-400">•</span>
                         <span className="text-[10px] text-gray-600 font-medium truncate max-w-[80px]" title={row.brand_name}>{row.brand_name}</span>

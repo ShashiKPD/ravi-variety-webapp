@@ -125,14 +125,31 @@
   }
 }
 
+/* ✅ 1. GLOBAL MOBILE SCROLLBAR HIDER */
+/* This automatically targets html/body on mobile screens (< 768px) */
+@media (max-width: 768px) {
+  html, body {
+    -ms-overflow-style: none !important;  /* IE and Edge */
+    scrollbar-width: none !important;  /* Firefox */
+  }
+
+  /* Webkit (Chrome, Safari, Opera) */
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+}
+
+/* ✅ 2. UTILITY CLASS (Keep this for specific inner containers) */
 @layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
-  }
-  /* Hide scrollbar for IE, Edge and Firefox */
-  .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
   }
 }

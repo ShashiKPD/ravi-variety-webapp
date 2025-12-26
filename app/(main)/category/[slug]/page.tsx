@@ -113,7 +113,7 @@ export default async function CategoryPage({ params, searchParams }: any) {
              />
         </aside>
 
-        <div className="flex-1 w-[80%] min-w-0 p-1 sm:p-2 md:p-6 bg-gray-50">
+        <div className="flex-1 w-[80%] min-w-0 p-2 sm:p-4 md:p-6 bg-white">
           <ProductGrid 
             products={products}
             totalCount={Number(totalCount)}

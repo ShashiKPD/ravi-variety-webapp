@@ -46,7 +46,7 @@ export default function MobileProductHeader({ title }: Props) {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-[60] h-14 px-4 lg:hidden flex items-center gap-3 transition-colors duration-100"
+      className="fixed top-0 left-0 right-0 z-[60] h-14 px-4 md:hidden flex items-center gap-3 transition-colors duration-100"
       style={{
         // Smoothly interpolate background opacity
         backgroundColor: isSearchOpen ? "rgba(255, 255, 255, 1)" : `rgba(255, 255, 255, ${opacity})`,

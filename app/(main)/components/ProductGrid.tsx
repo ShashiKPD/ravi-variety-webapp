@@ -44,7 +44,7 @@ export default function ProductGrid({
     <div className="flex flex-col gap-6 pb-24">
       
       {/* GRID LAYOUT */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-1 sm:gap-2 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 md:gap-6">
         {products.map((product) => (
           <ProductCard
             key={product.id}

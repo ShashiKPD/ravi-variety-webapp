@@ -37,18 +37,18 @@ export default function PricingSection({
 }: Props) {
   
   if (isAnonymous) {
-    return (
-      <div className="bg-gray-50/50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 border-y border-gray-100 mb-5">
-        <div className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
-          <div>
-            <p className="font-bold text-gray-900 text-sm">Wholesale Pricing</p>
-            <p className="text-[10px] text-gray-500">Login to view prices</p>
-          </div>
-          <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-            <Link href="/login">Login Now</Link>
-          </Button>
-        </div>
-      </div>
+    return (<></>
+      // <div className="bg-gray-50/50 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 border-y border-gray-100 mb-5">
+      //   <div className="flex items-center justify-between p-3 bg-white border rounded-lg shadow-sm">
+      //     <div>
+      //       <p className="font-bold text-gray-900 text-sm">Wholesale Pricing</p>
+      //       <p className="text-[10px] text-gray-500">Login to view prices</p>
+      //     </div>
+      //     <Button asChild variant="outline" size="sm" className="h-8 text-xs">
+      //       <Link href="/login">Login Now</Link>
+      //     </Button>
+      //   </div>
+      // </div>
     );
   }
 

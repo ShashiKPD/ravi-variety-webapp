@@ -1,6 +1,5 @@
 import Link from "next/link";
-import Image from "next/image";
-import { Lock } from "lucide-react"; 
+import Image from "next/image"; 
 import AddToCartButton from "./AddToCartButton";
 import WishlistButton from "../WishlistButton"; 
 import PriceDisplay from "./PriceDisplay"; 
@@ -91,14 +90,14 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
 
         {/* Title */}
         <Link href={`/p/${product.slug}/${product.id}`} className="block mb-1">
-          <h3 className="text-xs sm:text-sm font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+          <h3 className="text-xs sm:text-sm md:text-base  font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
         </Link>
 
         {/* Pricing */}
         <div>
-          {isLoggedIn && product.final_price !== null ? (
+          {isLoggedIn && product.final_price !== null && (
             <PriceDisplay 
               finalPrice={product.final_price}
               originalPrice={product.original_price}
@@ -109,16 +108,6 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
               unit={product.unit_name}
               size={priceTextSize}
             />
-          ) : (
-            <div className="flex items-center justify-between mt-1">
-              <div className="flex items-center gap-1 text-gray-400">
-                <Lock className="w-3 h-3" />
-                <span className="text-[10px] font-medium">Locked</span>
-              </div>
-              <Link href="/login" className="text-[10px] font-bold text-blue-600 hover:underline">
-                Login
-              </Link>
-            </div>
           )}
         </div>
 
