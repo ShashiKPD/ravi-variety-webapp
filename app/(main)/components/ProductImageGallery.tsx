@@ -56,7 +56,7 @@ export default function ProductImageGallery({ images, title }: Props) {
                     src={img}
                     alt={`${title} - View ${index + 1}`}
                     // fill
-                    className="object-contain mix-blend-multiply"
+                    className="object-contain mix-blend-multiply w-full h-full"
                     // priority={index === 0}
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />
@@ -100,7 +100,7 @@ export default function ProductImageGallery({ images, title }: Props) {
                 src={img}
                 alt={`Thumbnail ${idx + 1}`}
                 // fill
-                className="object-contain p-1"
+                className="object-contain p-1 w-full h-full"
               />
             </button>
           ))}

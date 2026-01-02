@@ -77,7 +77,7 @@ export default async function AccountHubPage() {
       <div className="flex items-center gap-5 p-5 bg-white rounded-2xl border border-gray-200 shadow-sm">
         <div className="relative w-16 h-16 rounded-full overflow-hidden border-2 border-gray-100 bg-gray-50 shrink-0">
           {profile?.avatar_url ? (
-            <Image src={profile.avatar_url} alt="User" fill className="object-cover" />
+            <img src={profile.avatar_url} alt="User"  className="object-cover  w-full h-full" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-300">
               <User className="w-8 h-8" />

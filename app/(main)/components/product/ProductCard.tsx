@@ -43,7 +43,7 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
             src={product.image_url} 
             alt={product.name} 
             // fill 
-            className="object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
+            className="object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500 w-full h-full" 
             sizes="(max-width: 768px) 50vw, 25vw"
           />
         ) : (

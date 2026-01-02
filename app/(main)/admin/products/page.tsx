@@ -83,7 +83,7 @@ export default async function ProductListPage(props: { searchParams: SearchParam
       )
     `, { count: 'exact' })
     .order('created_at', { ascending: false })
-    .limit(50);
+    // .limit(50);
 
   if (query) dbQuery = dbQuery.or(`name.ilike.%${query}%,sku.ilike.%${query}%`);
   if (brandId) dbQuery = dbQuery.eq("product_groups.brand_id", brandId);
