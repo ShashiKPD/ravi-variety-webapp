@@ -51,10 +51,10 @@ export default async function AuthButtons() {
         >
           <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-gray-50 flex-shrink-0">
             {avatarUrl ? (
-              <Image 
+              <img
                 src={avatarUrl} 
                 alt={name || "User"} 
-                fill 
+                // fill 
                 className="object-cover" 
                 sizes="32px" 
               />
