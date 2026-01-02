@@ -151,6 +151,19 @@ export default function ProductStackForm({ categories, brands, existingGroups, u
     if ((!isEditMode && mode === 'new') && (!brandId || !categoryId)) return toast.error("Select Brand & Category.");
     if (isEditMode && (!brandId || !categoryId)) return toast.error("Brand & Category are required.");
 
+    const MAX_SIZE_MB = 5; 
+    const MAX_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+    const totalSize = products.reduce((acc, p) => {
+      const productImagesSize = p.images.reduce((sum, file) => sum + file.size, 0);
+      return acc + productImagesSize;
+    }, 0);
+
+    if (totalSize > MAX_BYTES) {
+      const currentSizeMB = (totalSize / (1024 * 1024)).toFixed(2);
+      return toast.error(`Total upload size is ${currentSizeMB}MB. The limit is ${MAX_SIZE_MB}MB. Please reduce image sizes or upload fewer images.`);
+    }
+
     setIsSubmitting(true);
     const formData = new FormData();
 
