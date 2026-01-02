@@ -23,7 +23,7 @@ export default async function CartPage() {
   if (error) console.error("Cart RPC Error:", error);
 
   const items = cartItems || [];
-console.log(items)
+  
   // Prepare simple state for Synchronizer comparison
   const serverCartState = items.map((i: any) => ({
     product_id: i.product_id,

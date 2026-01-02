@@ -215,7 +215,9 @@ export default function ProductInfo({
               {/* Current Product */}
               <div className="flex flex-col gap-1 w-full relative">
                 <div className="aspect-square rounded-md border-2 border-blue-600 bg-white p-1 relative shadow-sm">
-                  <Image src={currentVariant.image_urls?.[0] || "/placeholder.png"} alt={currentVariant.name} fill className="object-contain p-1" />
+                  <img src={currentVariant.image_urls?.[0] || "/placeholder.png"} alt={currentVariant.name}
+                  //  fill
+                    className="object-contain p-1" />
                   <div className="absolute inset-0 bg-blue-600/5 flex items-center justify-center"><Check className="w-5 h-5 text-blue-600 drop-shadow-sm" /></div>
                 </div>
                 <div className="text-center px-1">
@@ -242,10 +244,10 @@ export default function ProductInfo({
                     title={p.name}
                   >
                     <div className="relative aspect-square rounded-md border border-gray-200 bg-white p-1 group-hover:border-blue-400 group-hover:shadow-md transition-all">
-                      <Image 
+                      <img 
                         src={p.image_url || "/placeholder.png"} 
                         alt={p.name} 
-                        fill 
+                        // fill 
                         className="object-contain p-1 mix-blend-multiply group-hover:scale-105 transition-transform" 
                       />
                       {p.size_matched && (

@@ -26,10 +26,10 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
   const showDiscountBadge = isLoggedIn && product.savings_percentage > 0;
 
   return (
-    <div className="group flex flex-col bg-white overflow-hidden hover:shadow-md transition-all duration-300 h-full relative">
+    <div className="group flex flex-col bg-white overflow-hidden  transition-all duration-300 h-full relative">
       
       {/* 1. Image Area - Changed background to bg-slate-50 */}
-      <Link href={`/p/${product.slug}/${product.id}`} className="relative rounded-lg aspect-square bg-slate-100 block overflow-hidden">
+      <Link href={`/p/${product.slug}/${product.id}`} className="relative rounded-lg bg-slate-100 aspect-square bg block overflow-hidden">
         
         {/* Compact Green Badge */}
         {showDiscountBadge && (
@@ -39,10 +39,10 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
         )}
 
         {product.image_url ? (
-          <Image 
+          <img 
             src={product.image_url} 
             alt={product.name} 
-            fill 
+            // fill 
             className="object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" 
             sizes="(max-width: 768px) 50vw, 25vw"
           />
@@ -80,25 +80,26 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
         )}
 
         {/* Variant Info - Removed pr-[80px] */}
-        <div className="min-h-[18px] mb-1.5"> 
-          {variantLabel && (
-            <span className="inline-flex items-center px-1.5 py-0.3 rounded text-[10px] font-semibold bg-slate-100 text-gray-700 border border-slate-200 whitespace-nowrap truncate max-w-full">
+        {variantLabel && (
+          <Link href={`/p/${product.slug}/${product.id}`} className="flex mb-1.5"> 
+             <span className="inline-flex items-center px-1.5 py-0.3 rounded text-[10px] font-bold bg-slate-100 text-gray-700 border border-slate-200 whitespace-nowrap truncate max-w-full">
               {variantLabel}
             </span>
-          )}
-        </div>
+          </Link>
+        )}
 
         {/* Title */}
-        <Link href={`/p/${product.slug}/${product.id}`} className="block mb-1">
-          <h3 className="text-xs sm:text-sm md:text-base  font-bold text-gray-900 line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
+        <Link href={`/p/${product.slug}/${product.id}`} className="block mb-1.5">
+          <h3 className="text-xs sm:text-sm md:text-base  font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
             {product.name}
           </h3>
         </Link>
 
         {/* Pricing */}
-        <div>
+        <Link href={`/p/${product.slug}/${product.id}`}>
           {isLoggedIn && product.final_price !== null && (
             <PriceDisplay 
+              className="cursor-pointer"
               finalPrice={product.final_price}
               originalPrice={product.original_price}
               mrp={product.mrp}
@@ -109,7 +110,7 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
               size={priceTextSize}
             />
           )}
-        </div>
+        </Link>
 
       </div>
     </div>

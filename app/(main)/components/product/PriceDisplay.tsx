@@ -83,7 +83,7 @@ export default function PriceDisplay({
       <div className="flex items-baseline flex-wrap gap-y-0">
         
         {/* Final Price */}
-        <span className={cn("font-bold text-gray-900 leading-none", s.price)}>
+        <span className={cn("font-bold text-gray-900", s.price, "leading-none")}>
           ₹{finalPrice}
         </span>
 
