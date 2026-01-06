@@ -6,6 +6,7 @@ import MobileProductHeader from "@/app/(main)/components/product/MobileProductHe
 import ProductSection from "@/app/(main)/components/product/ProductSection"; 
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { getCurrentUser } from "@/utils/supabase/get-user-profile";
 
 type PageProps = {
   params: Promise<{
@@ -14,24 +15,26 @@ type PageProps = {
   }>;
 };
 
-// ... (Keep existing types if needed, or rely on inference)
 
 export default async function ProductDetailPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
   // 1. User Context
-  const { data: { user } } = await supabase.auth.getUser();
-  let userRole = "anon";
+  // const { data: { user } } = await supabase.auth.getUser();
+  const { user, role: userRole } = await getCurrentUser();
+  
+  // let userRole = "anon";
   let isWishlisted = false;
 
   if (user) {
-    const [profileRes, wishlistRes] = await Promise.all([
-      supabase.from("profiles").select("role").eq("id", user.id).single(),
+    const [wishlistRes] = await Promise.all([
+      // supabase.from("profiles").select("role").eq("id", user.id).single(),
       supabase.from("wishlist_items").select("id").eq("user_id", user.id).eq("product_id", Number(id)).single(),
     ]);
-    userRole = profileRes.data?.role || "anon";
+    // userRole = profileRes.data?.role || "anon";
     isWishlisted = !!wishlistRes.data;
+    console.log("user profile, wishlist fetched");
   }
 
   // 2. Fetch Main Product Details (Needed first for slugs)

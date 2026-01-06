@@ -5,6 +5,7 @@ import FloatingCartBar from "@/app/(main)/components/cart/FloatingCartBar";
 import { Toaster } from "sonner";
 import "./globals.css";
 
+
 const nunito = Nunito({ 
   subsets: ["latin"],
   weight: ["300", "400", "600", "700", "800"] 

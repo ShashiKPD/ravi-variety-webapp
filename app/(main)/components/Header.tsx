@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Suspense, useLayoutEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Search, ChevronLeft, ScanBarcode } from "lucide-react";
+import { Search, ChevronLeft, ScanBarcode, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
