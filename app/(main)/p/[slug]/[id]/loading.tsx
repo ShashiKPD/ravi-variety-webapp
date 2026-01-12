@@ -1,8 +1,10 @@
+import MobileProductHeader from "@/app/(main)/components/product/MobileProductHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ProductLoading() {
   return (
     <div className="bg-white sm:bg-gray-50 min-h-screen pb-0 sm:pb-20 font-sans">
+      <MobileProductHeader title="" /> 
       
       {/* Breadcrumbs (Desktop Only) */}
       <div className="bg-white border-b px-4 py-3 mb-6 hidden md:block">
@@ -28,7 +30,7 @@ export default function ProductLoading() {
             <div className="md:col-span-6 lg:col-span-5 p-0 sm:p-6 lg:p-8">
               <div className="md:sticky md:top-24">
                 {/* Main Image - Edge to edge on mobile */}
-                <Skeleton className="aspect-square w-full rounded-none sm:rounded-lg" />
+                <Skeleton className="aspect-5/4 md:aspect-square w-full rounded-none sm:rounded-lg" />
                 
                 {/* Thumbnails (Desktop) */}
                 <div className="hidden sm:flex gap-2 mt-4">

@@ -92,8 +92,10 @@ export default async function ProductDetailPage({ params }: PageProps) {
       price: p.final_price, // Map RPC 'final_price' to Component 'price'
       brand_name: current_variant.brand_name // Search RPC might not return brand name depending on version, fallback
     }));
-
-  const brandProducts = (brandRes.data || [])
+    // console.log(current_variant)
+    console.log(categoryRes)
+    
+    const brandProducts = (brandRes.data || [])
     .filter((p: any) => p.id !== Number(id))
     .map((p: any) => ({
       ...p,
