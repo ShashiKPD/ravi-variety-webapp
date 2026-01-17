@@ -117,7 +117,7 @@ export default function FloatingCartBar() {
         <div className={cn("absolute inset-0 flex items-center justify-center transition-opacity duration-300", isExpanded ? "opacity-0 pointer-events-none delay-0" : "opacity-100 delay-100")}>
           {circleImage ? (
             <div className="relative w-9 h-9 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm">
-               <img src={circleImage} alt="Added" className="object-cover w-full h-full" />
+               <Image src={circleImage} alt="Added" fill sizes="30px" className="object-cover w-full h-full" />
             </div>
           ) : <ShoppingBag className="w-5 h-5 text-white" />}
         </div>
@@ -128,7 +128,7 @@ export default function FloatingCartBar() {
               {previewItems.map((item) => (
                 <div key={item.id} className="relative w-9 h-9 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm shrink-0">
                   {item.image_url ? (
-                    <img src={item.image_url} alt={item.name}  className="object-cover w-full h-full" />
+                    <Image src={item.image_url} alt={item.name} fill sizes="30px" className="object-cover w-full h-full" />
                   ) : <div className="w-full h-full bg-gray-100" />}
                 </div>
               ))}

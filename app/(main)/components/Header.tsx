@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense, useLayoutEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Search, ChevronLeft, ScanBarcode, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -108,8 +109,8 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
 
   const isContextPage = pathname?.startsWith("/category/");
   const isAdminPage = pathname?.startsWith("/admin");
-  const shouldHideDesktopView = pathname.startsWith("/admin/products");
-  const shouldHideMobileView = pathname.startsWith("/p/");
+  const shouldHideDesktopView = pathname.startsWith("/admin/products") || pathname.startsWith("/cart") || pathname.startsWith("/wishlist");
+  const shouldHideMobileView = pathname.startsWith("/p/") || pathname.startsWith("/cart") || pathname.startsWith("/wishlist");
   
   const handleSearch = (query: string) => {
     if (!query.trim()) return;
@@ -149,9 +150,10 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
             ) : (
               <div className="flex flex-col gap-2 pb-3 pt-3 px-4">
                 <div className="flex items-center justify-between">
-                  <Link href="/" className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
-                    <span className="font-bold text-blue-700 text-lg">Ravi Variety</span>
+                  <Link href="/" className="flex items-center">
+                    <Image src="/rv-logo-horizontal-transparent-v2-midres.png" alt="Ravi Variety" width={120} height={120} />
+                    {/* <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
+                    <span className="font-bold text-blue-700 text-lg">Ravi Variety</span> */}
                   </Link>
 
                   {/* Inject Slot */}
@@ -174,11 +176,12 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
         {!shouldHideDesktopView && (
         <div className="hidden md:flex items-center justify-between px-4 py-3 gap-6">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <div className="w-9 h-9 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
+            <Image src="/rv-logo-horizontal-transparent-v2-midres.png" alt="Ravi Variety" width={160} height={160} />
+            {/* <div className="w-9 h-9 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
             <div className="flex flex-col leading-none">
               <span className="font-bold text-blue-700 text-xl tracking-tight">Ravi Variety</span>
               <span className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">Wholesale Portal</span>
-            </div>
+            </div> */}
           </Link>
 
           <div className="flex-1 max-w-2xl">

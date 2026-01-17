@@ -22,9 +22,10 @@ export default async function AccountSettingsPage() {
       
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <BackButton href="/account" label="Back to Hub" />
         <div className="mt-1 sm:mt-2">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">Account Settings</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+            <BackButton href="/account" label="" />
+            Account Settings</h1>
           <p className="text-xs sm:text-sm text-gray-500">Manage your profile and delivery preferences.</p>
         </div>
       </div>

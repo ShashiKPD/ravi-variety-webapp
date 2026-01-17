@@ -2,10 +2,11 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Heart } from "lucide-react";
+import { Heart, ShoppingCart } from "lucide-react";
 // Correct Import Path
 import ProductCard from "@/app/(main)/components/product/ProductCard";
 import { ProductData } from "@/lib/types";
+import BackButton from "../components/BackButton";
 
 export default async function WishlistPage() {
   const supabase = await createClient();
@@ -41,7 +42,7 @@ export default async function WishlistPage() {
 
   if (!products || products.length === 0) {
     return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center bg-gray-50">
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center bg-white">
         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 shadow-sm">
           <Heart className="w-8 h-8 text-gray-300 fill-gray-50" />
         </div>
@@ -57,15 +58,24 @@ export default async function WishlistPage() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-20">
-      <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+    <div className="bg-white min-h-screen pb-20">
         
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            My Wishlist <span className="text-gray-400 font-normal text-lg">({products.length})</span>
-          </h1>
-        </div>
+        <nav className="flex justify-between items-start sticky top-0 bg-white p-4 z-200 border-b border-gray-200 shadow-sm">
+          <div className="flex items-center">
+            <BackButton href="/account" label="" className="active:bg-gray-300" />
+            <div className="flex flex-col items-baseline">
+              <h1 className="text-lg leading-4 font-bold text-gray-900">
+                Wishlist 
+              </h1>
+              <span className="text-gray-400 font-normal text-xs">{products.length} items</span>
+            </div>
+          </div>
+          <Link href="/cart" className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-full">
+            <ShoppingCart className="w-5 h-5 text-gray-600 fill-gray-50" />
+          </Link>
+        </nav>
         
+      <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {products.map((product) => (
             <div key={product.id} className="h-full">
