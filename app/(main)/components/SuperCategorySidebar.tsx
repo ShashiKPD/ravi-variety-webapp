@@ -77,12 +77,14 @@ export default function SuperCategorySidebar({
                   : "border-gray-200 group-hover:border-gray-400"
               )}>
                 {item.category_image ? (
-                  <img 
+                  <Image 
                     src={item.category_image} 
                     alt={item.category_name} 
-                    // fill 
+                    fill 
                     className="object-cover w-full h-full"
                     sizes="56px"
+                    // width={56}
+                    // height={56}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-400 font-bold text-lg">

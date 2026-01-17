@@ -39,12 +39,13 @@ export default function ProductCard({ product, isLoggedIn, isWishlisted = false,
         )}
 
         {product.image_url ? (
-          <img 
+          <Image 
             src={product.image_url} 
             alt={product.name} 
-            // fill 
+            fill 
             className="object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500 w-full h-full" 
             sizes="(max-width: 768px) 50vw, 25vw"
+            draggable={false}
           />
         ) : (
           <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 text-[10px] font-medium">No Image</div>

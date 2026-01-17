@@ -79,7 +79,7 @@ export default async function AllCategoriesPage() {
               >
                 <div className="w-5 h-5 rounded bg-gray-100 flex items-center justify-center shrink-0 overflow-hidden">
                   {group.image_url && (
-                    <Image src={group.image_url} alt="" width={20} height={20} className="object-cover w-full h-full" />
+                    <Image src={group.image_url} alt="group-image" width={32} height={32} className="object-cover w-full h-full" />
                   )}
                 </div>
                 <span className="truncate">{group.name}</span>
@@ -107,7 +107,7 @@ export default async function AllCategoriesPage() {
                 <div className="flex items-center gap-2">
                    {/* Tiny Department Icon */}
                    <div className="w-6 h-6 md:w-8 md:h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                    {group.image_url && <img src={group.image_url} alt="" width={32} height={32} className="object-cover w-full h-full" />}
+                    {group.image_url && <Image src={group.image_url} alt="group-image" width={32} height={32} className="object-cover w-full h-full" />}
                    </div>
                    <h2 className="text-sm md:text-lg font-bold text-gray-800">{group.name}</h2>
                 </div>
@@ -132,10 +132,10 @@ export default async function AllCategoriesPage() {
                     {/* Compact Image Container */}
                     <div className="relative w-full aspect-square rounded-xl bg-white border border-gray-100 overflow-hidden group-hover:border-blue-200 group-active:border-blue-300 transition-colors">
                       {cat.image_url ? (
-                        <img 
+                        <Image
                           src={cat.image_url} 
                           alt={cat.name} 
-                          // fill 
+                          fill
                           className="object-cover p-0.5 rounded-xl group-hover:scale-105 transition-transform duration-300 w-full h-full"
                           sizes="(max-width: 768px) 25vw, 100px"
                         />
@@ -169,10 +169,10 @@ export default async function AllCategoriesPage() {
                     className="bg-white border border-gray-200 rounded-lg p-2 hover:border-orange-200 hover:shadow-sm active:scale-95 active:bg-orange-50 active:border-orange-300 transition-all aspect-[3/2] flex items-center justify-center relative group"
                   >
                     {brand.image_url ? (
-                      <img 
+                      <Image
                         src={brand.image_url} 
                         alt={brand.name} 
-                        // fill 
+                        fill
                         className="object-contain p-1.5 group-hover:scale-105 transition-transform w-full h-full"
                         sizes="100px"
                       />

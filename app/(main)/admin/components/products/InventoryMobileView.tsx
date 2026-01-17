@@ -66,7 +66,7 @@ export default function InventoryMobileView({ products }: Props) {
               {/* Image Section */}
               <div className="w-20 h-20 rounded-lg border bg-gray-50 relative overflow-hidden shrink-0">
                 {p.image_url ? (
-                  <Image src={p.image_url} alt={p.name} fill className="object-cover" />
+                  <Image src={p.image_url} alt={p.name} sizes="(max-width: 768px) 25vw, 64px" fill className="object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-300">
                     <Package className="w-8 h-8" />

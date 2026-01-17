@@ -3,18 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
-      bodySizeLimit: '4.5mb', // Increase limit for file uploads
+      bodySizeLimit: '4.5mb',
     },
   },
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "enypxizrldolzhaomnpf.supabase.co", 
-        port: "",
-        pathname: "/storage/v1/object/public/**",
-      },
-    ],
+    loader: 'custom',
+    loaderFile: './imagekit-loader.ts',
   },
 };
 

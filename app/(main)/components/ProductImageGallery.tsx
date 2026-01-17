@@ -52,12 +52,12 @@ export default function ProductImageGallery({ images, title }: Props) {
             {displayImages.map((img, index) => (
               <CarouselItem key={index}>
                 <div className="relative aspect-5/4 md:aspect-square w-full h-full flex items-center justify-center ">
-                  <img
+                  <Image
                     src={img}
                     alt={`${title} - View ${index + 1}`}
-                    // fill
+                    fill
                     className="object-contain mix-blend-multiply w-full h-full"
-                    // priority={index === 0}
+                    priority={index === 0}
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 </div>
@@ -96,10 +96,11 @@ export default function ProductImageGallery({ images, title }: Props) {
                   : "border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100"
               )}
             >
-              <img
+              <Image
                 src={img}
                 alt={`Thumbnail ${idx + 1}`}
-                // fill
+                fill
+                sizes="(max-width: 768px) 100px, 20px"
                 className="object-contain p-1 w-full h-full"
               />
             </button>

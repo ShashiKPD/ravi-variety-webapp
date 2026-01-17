@@ -179,7 +179,7 @@ export default function InventoryDesktopTable(props: Props) {
 
                   <div style={{ width: colWidths.img }} className="p-3 shrink-0 border-r border-transparent">
                     <div className="w-10 h-10 rounded border bg-gray-50 relative overflow-hidden">
-                      {row.image_url && <Image src={row.image_url} alt="" fill className="object-cover" />}
+                      {row.image_url && <Image src={row.image_url} alt="product thumbnail" sizes="64px" fill className="object-cover" />}
                     </div>
                   </div>
 
