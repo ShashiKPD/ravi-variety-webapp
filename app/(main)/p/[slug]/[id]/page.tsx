@@ -4,6 +4,7 @@ import ProductImageGallery from "@/app/(main)/components/ProductImageGallery";
 import ProductInfo from "@/app/(main)/components/ProductInfo"; 
 import MobileProductHeader from "@/app/(main)/components/product/MobileProductHeader"; 
 import ProductSection from "@/app/(main)/components/product/ProductSection"; 
+import ScrollToTopOnMount from "@/app/(main)/components/ScrollToTopOnMount";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { getCurrentUser } from "@/utils/supabase/get-user-profile";
@@ -105,7 +106,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
   return (
     <div className="bg-white sm:bg-gray-50 min-h-screen pb-0 sm:pb-20">
-      
+      <ScrollToTopOnMount />
       <MobileProductHeader title={current_variant.name} />
 
       <div className="bg-white border-b px-4 py-2 sm:py-3 mb-0 sm:mb-6 hidden md:block">

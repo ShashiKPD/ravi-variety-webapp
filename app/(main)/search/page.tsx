@@ -38,6 +38,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const minPrice = params.min_price ? Number(params.min_price) : null;
   const maxPrice = params.max_price ? Number(params.max_price) : null;
   const inStock = params.stock === 'true';
+  const isFeatured = params.filter === 'featured';
 
   const [searchResults, categoriesRes, brandsRes, sizesRes] = await Promise.all([
     supabase.rpc("search_products", {
@@ -49,6 +50,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       p_min_price: minPrice,
       p_max_price: maxPrice,
       p_in_stock: inStock ? true : null,
+      p_is_featured: isFeatured ? true : null,
       p_sort_by: sort,
       p_page: page,
       p_limit: limit
@@ -82,7 +84,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const isLoggedIn = ["retailer", "wholesaler", "admin"].includes(userRole);
 
   let pageTitle = "All Products";
-  if (query) {
+  if (isFeatured) {
+    pageTitle = "Featured Products";
+  } else if (query) {
     pageTitle = `Results for "${query}"`;
   } else if (brandSlugs && brandSlugs.length === 1) {
     const brandName = brandsRes.data?.find((b) => b.slug === brandSlugs[0])?.name;
@@ -93,19 +97,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   }
 
   return (
-    // Reduced padding: px-2 sm:px-4, py-4 sm:py-6
     <div className="max-w-[1600px] mx-auto px-3 sm:px-4 py-4 sm:py-6">
-      
-      {/* Header: Tighter spacing */}
       <div className="mb-4 border-b border-gray-100 pb-3">
-        {/* Responsive text size: smaller on mobile */}
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{pageTitle}</h1>
         <p className="text-xs sm:text-sm text-gray-500 mt-1">
           Showing {products.length} of {Number(totalCount)} items
         </p>
       </div>
 
-      {/* Content Gap: Reduced on mobile */}
       <div className="flex flex-col md:flex-row gap-4 lg:gap-6">
         <aside className="w-full md:w-[260px] lg:w-[260px] shrink-0">
           <SearchFilters 

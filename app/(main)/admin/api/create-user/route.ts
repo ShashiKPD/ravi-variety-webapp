@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   // 1. Parse FormData instead of JSON
   const formData = await request.formData();
-  
+
   const phone = formData.get("phone") as string;
   const emailRaw = formData.get("email") as string;
   const password = formData.get("password") as string;
@@ -20,21 +20,23 @@ export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!supabaseUrl || !supabaseServiceKey) return new NextResponse("Config error", { status: 500 });
+  if (!supabaseUrl || !supabaseServiceKey)
+    return new NextResponse("Config error", { status: 500 });
 
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
   // 2. Create Auth User
-  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-    phone: phone,
-    email: email,
-    password: password,
-    phone_confirm: true,
-    email_confirm: true,
-    user_metadata: { full_name: fullName, role }
-  });
+  const { data: authData, error: authError } =
+    await supabaseAdmin.auth.admin.createUser({
+      phone: phone,
+      email: email,
+      password: password,
+      phone_confirm: true,
+      email_confirm: true,
+      user_metadata: { full_name: fullName, role },
+    });
 
   if (authError) {
     return new NextResponse(authError.message, { status: 400 });
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
         .from("avatars")
         .upload(filePath, avatarFile, {
           contentType: avatarFile.type,
-          upsert: true
+          upsert: true,
         });
 
       if (!uploadError) {
@@ -86,7 +88,7 @@ export async function POST(request: Request) {
 
     return new NextResponse(
       JSON.stringify({ message: "User created successfully" }),
-      { status: 200 }
+      { status: 200 },
     );
   }
 

@@ -1,9 +1,11 @@
 import MobileProductHeader from "@/app/(main)/components/product/MobileProductHeader";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import ScrollToTopOnMount from "@/app/(main)/components/ScrollToTopOnMount";
+  
 export default function ProductLoading() {
   return (
     <div className="bg-white sm:bg-gray-50 min-h-screen pb-0 sm:pb-20 font-sans">
+      <ScrollToTopOnMount />
       <MobileProductHeader title="" /> 
       
       {/* Breadcrumbs (Desktop Only) */}
