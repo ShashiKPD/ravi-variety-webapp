@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import ProductGrid from "@/app/(main)/components/ProductGrid";
 import SuperCategorySidebar from "@/app/(main)/components/SuperCategorySidebar";
 import { ProductData } from "@/lib/types";
-import { SlidersHorizontal } from "lucide-react";
+import SearchFilters from "@/app/(main)/components/search/SearchFilters";
 
 export default async function CategoryPage({ params, searchParams }: any) {
   const supabase = await createClient();
@@ -35,6 +35,12 @@ export default async function CategoryPage({ params, searchParams }: any) {
     userRole = pRes.data?.role || "anon";
     if (wRes.data) wishlistVariantIds = new Set(wRes.data.map((i: any) => i.product_id));
   }
+  
+  const [brandsRes, sizesRes] = await Promise.all([
+    supabase.from("brands").select("id, name, slug").order("name"),
+    supabase.rpc("get_distinct_product_sizes")
+  ]);
+  const availableSizes = sizesRes.data?.map((s: any) => s.size) || [];
 
   const page = Number(urlParams.page) || 1;
   const limit = 20;
@@ -97,15 +103,19 @@ export default async function CategoryPage({ params, searchParams }: any) {
             </p>
           </div>
           <div className="flex gap-2 md:hidden">
-            <button className="flex items-center gap-1 px-3 py-1.5 border rounded-full text-xs font-medium bg-gray-50">
-                <SlidersHorizontal className="w-3 h-3" /> Filter
-            </button>
+            <SearchFilters 
+              categories={[]} 
+              brands={brandsRes.data || []}
+              sizes={availableSizes}
+              hideCategories={true}
+              mobileDrawerOnly={true} 
+            />
           </div>
         </div>
       </div>
 
       <div className="max-w-[1600px] mx-auto w-full flex-1 flex items-start">
-        <aside className="w-[20%] shrink-0 border-r border-gray-200 min-h-[calc(100vh-110px)] bg-white sticky top-[110px] self-start overflow-y-auto max-h-[calc(100vh-110px)] scrollbar-hide">
+        <aside className="w-[20%] shrink-0 border-r border-gray-200 min-h-[calc(100vh-110px)] bg-white sticky top-[70px] self-start overflow-y-auto max-h-[calc(100vh-110px)] scrollbar-hide">
              <SuperCategorySidebar 
                taxonomy={taxonomy || []} 
                activeCategorySlug={activeCategorySlug} 
@@ -121,8 +131,9 @@ export default async function CategoryPage({ params, searchParams }: any) {
             limit={limit}
             isLoggedIn={isLoggedIn}
             wishlistVariantIds={wishlistVariantIds}
-            currentParams={urlParams}
+            currentParams={urlParams} // Pass raw params object
             clearFiltersHref={`/category/${slug}`}
+            supercategorySlug={supercat.slug} // Pass this explicitly
           />
         </div>
       </div>

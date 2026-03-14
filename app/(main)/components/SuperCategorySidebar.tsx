@@ -28,22 +28,18 @@ export default function SuperCategorySidebar({
   }
 
   return (
-    <div className="bg-white h-full flex flex-col border-r border-gray-200">
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-24 pt-2">
-        
-        {/* "All" Option - Clears the category filter */}
+    <div className="bg-white flex flex-col pb-24 pt-2">
         <Link
           href={`/category/${supercategorySlug}`}
-          scroll={false} // Prevents scroll jump
+          scroll={false}
           className="flex flex-col items-center justify-center py-3 px-1 cursor-pointer group"
         >
           <div className={cn(
             "relative w-14 h-14 mb-2 overflow-hidden transition-all bg-white flex items-center justify-center",
-            // Styling: Square (rounded-md), Dark Border for Active, Light Border for Inactive
             "rounded-md border", 
             !activeCategorySlug 
-              ? "border-gray-900 border-2 shadow-sm" // Active: Dark & Thick
-              : "border-gray-200 group-hover:border-gray-400" // Inactive
+              ? "border-gray-900 border-2 shadow-sm"
+              : "border-gray-200 group-hover:border-gray-400"
           )}>
             <LayoutGrid className={cn(
               "w-6 h-6 transition-colors", 
@@ -64,7 +60,6 @@ export default function SuperCategorySidebar({
           return (
             <Link
               key={item.category_id}
-              // Hybrid URL: Keep Supercategory Context + Switch Category Param
               href={`/category/${supercategorySlug}?category=${item.category_slug}`}
               scroll={false}
               className="flex flex-col items-center justify-center py-3 px-1 cursor-pointer group"
@@ -83,8 +78,6 @@ export default function SuperCategorySidebar({
                     fill 
                     className="object-cover w-full h-full"
                     sizes="56px"
-                    // width={56}
-                    // height={56}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-400 font-bold text-lg">
@@ -102,7 +95,6 @@ export default function SuperCategorySidebar({
             </Link>
           );
         })}
-      </div>
     </div>
   );
 }

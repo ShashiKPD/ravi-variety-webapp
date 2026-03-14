@@ -122,8 +122,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             limit={limit}
             isLoggedIn={isLoggedIn}
             wishlistVariantIds={wishlistVariantIds}
-            currentParams={params}
+            currentParams={params} // Pass raw params object
             clearFiltersHref="/search"
+            supercategorySlug={null} // Important for search page
           />
         </div>
       </div>

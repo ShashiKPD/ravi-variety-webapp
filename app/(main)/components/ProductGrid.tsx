@@ -1,18 +1,25 @@
+// app/(main)/components/ProductGrid.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useInView } from "react-intersection-observer";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import ProductCard from "@/app/(main)/components/product/ProductCard"; // Updated path
-import { ProductData } from "@/lib/types"; // Updated type
+import { Loader2 } from "lucide-react";
+import ProductCard from "@/app/(main)/components/product/ProductCard";
+import { ProductData } from "@/lib/types";
+import { fetchProductsAction } from "@/app/(main)/actions/products";
 
 type ProductGridProps = {
-  products: ProductData[]; // Changed from ProductSummary
+  products: ProductData[];
   totalCount: number;
   currentPage: number;
   limit?: number;
-  isLoggedIn: boolean; // Renamed for clarity
+  isLoggedIn: boolean;
   wishlistVariantIds: Set<number>;
   currentParams: { [key: string]: string | string[] | undefined };
   clearFiltersHref: string;
+  supercategorySlug?: string | null; // Pass this explicitly
 };
 
 export default function ProductGrid({
@@ -23,12 +30,58 @@ export default function ProductGrid({
   isLoggedIn,
   wishlistVariantIds,
   currentParams,
-  clearFiltersHref
+  clearFiltersHref,
+  supercategorySlug = null
 }: ProductGridProps) {
   
-  const totalPages = Math.ceil(Number(totalCount) / limit);
+  const [items, setItems] = useState<ProductData[]>(products);
+  const [page, setPage] = useState(2);
+  const [hasMore, setHasMore] = useState(totalCount > products.length);
+  const [loading, setLoading] = useState(false);
+  const { ref, inView } = useInView();
 
-  if (products.length === 0) {
+  // Reset state when filters/URL change
+  useEffect(() => {
+    setItems(products);
+    setPage(2);
+    setHasMore(totalCount > products.length);
+  }, [products, totalCount, currentParams, supercategorySlug]);
+
+  const loadMore = async () => {
+    if (loading || !hasMore) return;
+    setLoading(true);
+    
+    try {
+      const newProducts = await fetchProductsAction(
+        currentParams,
+        supercategorySlug,
+        page,
+        limit
+      );
+      
+      if (newProducts.length === 0) {
+        setHasMore(false);
+      } else {
+        setItems((prev) => [...prev, ...newProducts]);
+        setPage((prev) => prev + 1);
+        if (items.length + newProducts.length >= totalCount) {
+          setHasMore(false);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load products", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (inView) {
+      loadMore();
+    }
+  }, [inView]);
+
+  if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-lg border border-dashed border-gray-200">
         <p className="text-lg font-medium text-gray-900">No products found</p>
@@ -42,12 +95,10 @@ export default function ProductGrid({
 
   return (
     <div className="flex flex-col gap-6 pb-24">
-      
-      {/* GRID LAYOUT */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 md:gap-6">
-        {products.map((product) => (
+        {items.map((product, index) => (
           <ProductCard
-            key={product.id}
+            key={`${product.id}-${index}`}
             product={product}
             isLoggedIn={isLoggedIn}
             isWishlisted={wishlistVariantIds.has(product.id)}
@@ -55,42 +106,15 @@ export default function ProductGrid({
         ))}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-4">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            disabled={currentPage <= 1}
-            asChild={currentPage > 1}
-          >
-            {currentPage > 1 ? (
-              <Link href={{ query: { ...currentParams, page: currentPage - 1 } }}>
-                <ChevronLeft className="h-4 w-4 mr-2" /> Previous
-              </Link>
-            ) : (
-              <span><ChevronLeft className="h-4 w-4 mr-2" /> Previous</span>
-            )}
-          </Button>
-          
-          <span className="text-sm text-gray-600 font-medium">
-            Page {currentPage} of {totalPages}
-          </span>
+      {hasMore && (
+        <div ref={ref} className="flex justify-center p-8 w-full mt-2">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 opacity-50" />
+        </div>
+      )}
 
-          <Button 
-            variant="outline" 
-            size="sm" 
-            disabled={currentPage >= totalPages}
-            asChild={currentPage < totalPages}
-          >
-            {currentPage < totalPages ? (
-              <Link href={{ query: { ...currentParams, page: currentPage + 1 } }}>
-                Next <ChevronRight className="h-4 w-4 ml-2" />
-              </Link>
-            ) : (
-              <span>Next <ChevronRight className="h-4 w-4 ml-2" /></span>
-            )}
-          </Button>
+      {!hasMore && items.length > 0 && totalCount > limit && (
+        <div className="text-center p-8 text-gray-400 text-xs uppercase tracking-widest mt-2">
+          — You've reached the end —
         </div>
       )}
     </div>

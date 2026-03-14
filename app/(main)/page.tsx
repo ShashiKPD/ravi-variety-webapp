@@ -76,7 +76,7 @@ export default async function HomePage() {
   const allProductsInitial = allProductsRes.data || [];
 
   return (
-    <div className="bg-gray-50/30 min-h-screen pb-12">
+    <div className="bg-gray-50/30 min-h-screen pb-12 md:w-[80%] mx-auto">
       
       <SuperCategoryRail data={supercategories} />
 

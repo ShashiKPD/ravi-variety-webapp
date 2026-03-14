@@ -151,7 +151,7 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
               <div className="flex flex-col gap-2 pb-3 pt-3 px-4">
                 <div className="flex items-center justify-between">
                   <Link href="/" className="flex items-center">
-                    <Image src="/rv-logo-horizontal-transparent-v2-midres.png" alt="Ravi Variety" width={120} height={120} />
+                    <Image src="/rv-logo-horizontal-transparent-v2-midres.png" alt="Ravi Variety" width={120} height={30} />
                     {/* <div className="w-8 h-8 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
                     <span className="font-bold text-blue-700 text-lg">Ravi Variety</span> */}
                   </Link>
@@ -176,7 +176,7 @@ export default function Header({ authSlot }: { authSlot: React.ReactNode }) {
         {!shouldHideDesktopView && (
         <div className="hidden md:flex items-center justify-between px-4 py-3 gap-6">
           <Link href="/" className="flex items-center gap-2 flex-shrink-0">
-            <Image src="/rv-logo-horizontal-transparent-v2-midres.png" alt="Ravi Variety" width={160} height={160} />
+            <Image src="/rv-logo-horizontal-transparent-v2-midres.png" alt="Ravi Variety" width={160} height={40} />
             {/* <div className="w-9 h-9 bg-blue-600 rounded-md flex items-center justify-center text-white font-bold text-xl">R</div>
             <div className="flex flex-col leading-none">
               <span className="font-bold text-blue-700 text-xl tracking-tight">Ravi Variety</span>

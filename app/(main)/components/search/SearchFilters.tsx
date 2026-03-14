@@ -37,6 +37,7 @@ type FilterProps = {
   brands: FilterItem[];
   sizes: string[];
   hideCategories?: boolean;
+  mobileDrawerOnly?: boolean; // <-- NEW
 };
 
 type FilterState = {
@@ -102,7 +103,7 @@ const FilterList = ({
   </div>
 );
 
-export default function SearchFilters({ categories, brands, sizes, hideCategories = false }: FilterProps) {
+export default function SearchFilters({ categories, brands, sizes, hideCategories = false, mobileDrawerOnly = false }: FilterProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -300,31 +301,33 @@ export default function SearchFilters({ categories, brands, sizes, hideCategorie
   return (
     <>
       {/* DESKTOP SIDEBAR */}
-      <div className="hidden md:flex w-[260px] shrink-0 sticky top-24 h-[calc(100vh-120px)] flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
-          <h3 className="font-bold text-gray-900 flex items-center gap-2">
-            <Filter className="w-4 h-4 text-blue-600" /> Filters
-          </h3>
-          {isDirty && (
-            <button onClick={clearAll} className="text-xs font-medium text-red-600 hover:text-red-700 hover:underline">
-              Clear All
-            </button>
-          )}
-        </div>
-        
-        <ScrollArea className="flex-1 px-4 min-h-0">
-          {filterMarkup}
-        </ScrollArea>
+      {!mobileDrawerOnly && (
+        <div className="hidden md:flex w-[260px] shrink-0 sticky top-24 h-[calc(100vh-120px)] flex-col bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+          <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 shrink-0">
+            <h3 className="font-bold text-gray-900 flex items-center gap-2">
+              <Filter className="w-4 h-4 text-blue-600" /> Filters
+            </h3>
+            {isDirty && (
+              <button onClick={clearAll} className="text-xs font-medium text-red-600 hover:text-red-700 hover:underline">
+                Clear All
+              </button>
+            )}
+          </div>
+          
+          <ScrollArea className="flex-1 px-4 min-h-0">
+            {filterMarkup}
+          </ScrollArea>
 
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
-          <Button onClick={applyFilters} className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold">
-            Apply Filters
-          </Button>
+          <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
+            <Button onClick={applyFilters} className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-sm font-semibold">
+              Apply Filters
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* MOBILE TRIGGER */}
-      <div className="md:hidden mb-4">
+      <div className={!mobileDrawerOnly ? "" : "md:hidden"}>
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" className="w-full justify-between bg-white border-gray-300 text-gray-700 h-11 shadow-sm">
