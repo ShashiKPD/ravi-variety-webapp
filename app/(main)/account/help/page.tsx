@@ -24,7 +24,7 @@ export default function HelpCenterPage() {
             </div>
             <div>
               <p className="text-sm font-medium">Customer Support</p>
-              <p className="text-sm text-gray-600">+91 98765 43210</p>
+              <p className="text-sm text-gray-600">+91 96937 49835</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -33,7 +33,7 @@ export default function HelpCenterPage() {
             </div>
             <div>
               <p className="text-sm font-medium">Email Support</p>
-              <p className="text-sm text-gray-600">support@ravivariety.com</p>
+              <p className="text-sm text-gray-600">support@ravivariety.in</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -42,7 +42,7 @@ export default function HelpCenterPage() {
             </div>
             <div>
               <p className="text-sm font-medium">Head Office</p>
-              <p className="text-sm text-gray-600">123 Market Road, Kolkata, West Bengal</p>
+              <p className="text-sm text-gray-600">Rajrappa project, Ramgarh, jharkhand</p>
             </div>
           </div>
         </CardContent>
